@@ -1,0 +1,8 @@
+{
+  "name": "new sky metro",
+  "description": "Manage a virtual metropolis and fulfill tasks provided by Gemini.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,47 @@
+[
+  {
+    "id": "clean_energy",
+    "name": "Clean Energy",
+    "description": "Increases commercial and industrial costs/efficiency. Happiness +10.",
+    "costPerDay": 20,
+    "requirements": {
+      "minPopulation": 30
+    },
+    "effects": {
+      "industrialIncomeMultiplier": 0.85,
+      "commercialIncomeMultiplier": 1.0,
+      "happinessBoost": 10,
+      "environmentalBoost": 15
+    }
+  },
+  {
+    "id": "tax_cut",
+    "name": "Tax Incentives",
+    "description": "Deducts 20% of tax income but boosts population growth by 40%.",
+    "costPerDay": 0,
+    "requirements": {
+      "minMoney": 150
+    },
+    "effects": {
+      "industrialIncomeMultiplier": 0.8,
+      "commercialIncomeMultiplier": 0.8,
+      "populationGrowthMultiplier": 1.4,
+      "happinessBoost": 5
+    }
+  },
+  {
+    "id": "high_tax",
+    "name": "Corporate Surcharge",
+    "description": "Increases taxes by 30% but decreases population growth by 25%.",
+    "costPerDay": 0,
+    "requirements": {
+      "minMoney": 100
+    },
+    "effects": {
+      "industrialIncomeMultiplier": 1.3,
+      "commercialIncomeMultiplier": 1.3,
+      "populationGrowthMultiplier": 0.75,
+      "happinessBoost": -10
+    }
+  }
+]
