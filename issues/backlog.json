@@ -1,0 +1,9 @@
+{
+  "issues": [
+    {
+      "title": "Game Kernel Architecture",
+      "body": "Central simulation orchestrator...",
+      "labels": ["core-engine", "p0-critical"]
+    }
+  ]
+}
