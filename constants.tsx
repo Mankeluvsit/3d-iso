@@ -66,4 +66,13 @@ export const BUILDINGS: Record<BuildingType, BuildingConfig> = {
     popGen: 1,
     incomeGen: 0,
   },
+  [BuildingType.Bridge]: {
+    type: BuildingType.Bridge,
+    cost: 30,
+    name: 'Bridge',
+    description: 'Builds over water.',
+    color: '#94a3b8', // slate-400
+    popGen: 0,
+    incomeGen: 0,
+  },
 };

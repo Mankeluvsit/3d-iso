@@ -9,6 +9,7 @@ export enum BuildingType {
   Commercial = 'Commercial',
   Industrial = 'Industrial',
   Park = 'Park',
+  Bridge = 'Bridge',
 }
 
 export interface BuildingConfig {
@@ -27,6 +28,7 @@ export interface TileData {
   buildingType: BuildingType;
   // Suggested by AI for visual variety later
   variant?: number;
+  orientation?: 'N-S' | 'E-W';
 }
 
 export type Grid = TileData[][];

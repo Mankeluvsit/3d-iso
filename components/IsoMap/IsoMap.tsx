@@ -4,12 +4,19 @@
  */
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { Canvas, useFrame, useThree, ThreeElements } from '@react-three/fiber';
-import { MapControls, Environment, SoftShadows, Float, Outlines, OrthographicCamera } from '@react-three/drei';
+import { MapControls, Environment, SoftShadows, Float, OrthographicCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { MathUtils } from 'three';
-import { Grid, BuildingType, TileData } from '../types';
-import { GRID_SIZE, BUILDINGS } from '../constants';
-import { WeatherType, SeasonType, OverlayType, WEATHERS, SEASONS } from '../src/kernel/visual/VisualEngineState';
+import { Grid, BuildingType, TileData } from '../../types';
+import { GRID_SIZE, BUILDINGS } from '../../constants';
+import { WeatherType, SeasonType, OverlayType, WEATHERS, SEASONS } from '../../src/kernel/visual/VisualEngineState';
+import { getRoadSurfaceHeightAt, getHash, gridToWorld, WORLD_OFFSET, isRiverCell, getTileHeight, getBridgeDeckAbsoluteHeight } from './utils';
+import { LightPole } from './components/LightPole';
+import { TrafficSystem } from './components/TrafficSystem';
+import { PopulationSystem } from './components/PopulationSystem';
+import { WeatherParticles } from './components/WeatherParticles';
+import { boxGeo, cylinderGeo, coneGeo, sphereGeo, flatPlaneGeo } from './components/geometries';
+import { getBridgeOrientationAndValidity } from '../../src/kernel/Command';
 
 // Fix for TypeScript not recognizing R3F elements in JSX
 declare global {
@@ -17,20 +24,6 @@ declare global {
     interface IntrinsicElements extends ThreeElements {}
   }
 }
-
-// --- Coordinates & Helpers ---
-const WORLD_OFFSET = GRID_SIZE / 2 - 0.5;
-const gridToWorld = (x: number, y: number) => [x - WORLD_OFFSET, 0, y - WORLD_OFFSET] as [number, number, number];
-
-// Hash utilities for stable seed-based procedural variance
-const getHash = (x: number, y: number) => Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1;
-
-// Shared Geometries for GPU memory efficiency
-const boxGeo = new THREE.BoxGeometry(1, 1, 1);
-const cylinderGeo = new THREE.CylinderGeometry(1, 1, 1, 8);
-const coneGeo = new THREE.ConeGeometry(1, 1, 4);
-const sphereGeo = new THREE.SphereGeometry(1, 8, 8);
-const flatPlaneGeo = new THREE.PlaneGeometry(1, 1);
 
 // --- Window Material Glow Helper ---
 const WindowBlock = React.memo(({ position, scale, isNight, isBlackout }: { position: [number, number, number], scale: [number, number, number], isNight: boolean, isBlackout: boolean }) => {
@@ -40,13 +33,14 @@ const WindowBlock = React.memo(({ position, scale, isNight, isBlackout }: { posi
       <meshStandardMaterial 
         color={glowing ? '#fef08a' : '#bfdbfe'} 
         emissive={glowing ? '#fef08a' : '#1e3a8a'} 
-        emissiveIntensity={glowing ? 1.5 : 0.15} 
+        emissiveIntensity={glowing ? 2.5 : 0.15} 
         roughness={0.1} 
         metalness={0.9} 
       />
     </mesh>
   );
 });
+
 
 // --- Dynamic Particle Smoke Stack ---
 const SmokeStackProps = ({ position, pollutionLevel }: { position: [number, number, number], pollutionLevel: number }) => {
@@ -94,63 +88,6 @@ const SmokeStackProps = ({ position, pollutionLevel }: { position: [number, numb
   );
 };
 
-// --- Weather Dust Overlay component ---
-const WeatherParticles = ({ weather, windSpeed }: { weather: WeatherType, windSpeed: number }) => {
-  const pointsRef = useRef<THREE.Points>(null);
-  const particleCount = weather === 'thunderstorm' ? 300 : weather === 'rain' ? 180 : weather === 'snow' ? 120 : 0;
-
-  const [positions, speeds] = useMemo(() => {
-    if (particleCount === 0) return [new Float32Array(0), new Float32Array(0)];
-    const pos = new Float32Array(particleCount * 3);
-    const spd = new Float32Array(particleCount);
-    for (let i = 0; i < particleCount; i++) {
-      pos[i * 3 + 0] = (Math.random() - 0.5) * GRID_SIZE * 1.8;
-      pos[i * 3 + 1] = Math.random() * 12 + 1;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * GRID_SIZE * 1.8;
-      spd[i] = 1.8 + Math.random() * 2.2;
-    }
-    return [pos, spd];
-  }, [particleCount]);
-
-  useFrame((state, delta) => {
-    if (!pointsRef.current || particleCount === 0) return;
-    const geo = pointsRef.current.geometry;
-    const posArr = geo.attributes.position.array as Float32Array;
-
-    for (let i = 0; i < particleCount; i++) {
-      const idx = i * 3;
-      // Drop fall rate
-      const speed = speeds[i] * (weather === 'snow' ? 0.35 : 1.5) * 4.0 * delta;
-      posArr[idx + 1] -= speed; // Vertical drop
-      posArr[idx + 0] += (windSpeed * 0.15) * delta; // Wind drift
-
-      // Recycle boundary warp
-      if (posArr[idx + 1] < -1.0) {
-        posArr[idx + 1] = 13.0; // Reset height
-        posArr[idx + 0] = (Math.random() - 0.5) * GRID_SIZE * 1.8;
-        posArr[idx + 2] = (Math.random() - 0.5) * GRID_SIZE * 1.8;
-      }
-    }
-    geo.attributes.position.needsUpdate = true;
-  });
-
-  if (particleCount === 0) return null;
-
-  return (
-    <points ref={pointsRef}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          args={[positions, 3]}
-        />
-      </bufferGeometry>
-      <pointsMaterial 
-        color={weather === 'snow' ? '#ffffff' : '#93c5fd'} 
-        size={weather === 'snow' ? 0.15 : 0.08} 
-      />
-    </points>
-  );
-};
 
 // --- Active Scaffolding / Construction model ---
 const ConstructionBuilding = ({ height }: { height: number }) => {
@@ -251,6 +188,7 @@ interface BuildingStyles {
   season: SeasonType;
   averageHappiness: number;
   pollutionLevel: number;
+  grid: Grid;
 }
 
 const ProceduralBuilding = React.memo(({ 
@@ -263,13 +201,23 @@ const ProceduralBuilding = React.memo(({
   activeOverlay, 
   season, 
   averageHappiness,
-  pollutionLevel 
+  pollutionLevel,
+  grid
 }: BuildingStyles) => {
   const hash = getHash(x, y);
   const variant = Math.floor(hash * 100);
-  const rotation = Math.floor(hash * 4) * (Math.PI / 2);
+  
+  let rotation = Math.floor(hash * 4) * (Math.PI / 2);
+  if (type === BuildingType.Bridge) {
+    let orientation = grid[y]?.[x]?.orientation;
+    if (!orientation) {
+      const result = getBridgeOrientationAndValidity(x, y, grid);
+      orientation = result.orientation;
+    }
+    rotation = orientation === 'N-S' ? Math.PI / 2 : 0;
+  }
 
-  const isUnderConstruction = hash > 0.85; // Deterministic 15% rate of dynamic active renovation progress
+  const isUnderConstruction = (type === BuildingType.Residential || type === BuildingType.Commercial || type === BuildingType.Industrial) && hash > 0.85; // Deterministic 15% rate of dynamic active renovation progress
 
   // Quality check: Urban decay on neglected areas with low social happiness
   const isDecaying = averageHappiness < 45 && hash > 0.4;
@@ -431,6 +379,191 @@ const ProceduralBuilding = React.memo(({
               );
             }
 
+          case BuildingType.Bridge:
+            {
+              const bridgeColor = isNight ? '#475569' : '#94a3b8';
+              const railColor = isNight ? '#1e293b' : '#cbd5e1';
+
+              // Find the orientation
+              let orientation = grid[y]?.[x]?.orientation;
+              if (!orientation) {
+                const result = getBridgeOrientationAndValidity(x, y, grid);
+                orientation = result.orientation;
+              }
+
+              // Negative and positive neighbor coordinates in local space
+              const negX = orientation === 'E-W' ? x - 1 : x;
+              const negY = orientation === 'E-W' ? y : y - 1;
+              const posX = orientation === 'E-W' ? x + 1 : x;
+              const posY = orientation === 'E-W' ? y : y + 1;
+
+              // Absolute Y heights of elements
+              const Y_deck_abs = getBridgeDeckAbsoluteHeight(x, y, grid);
+              const Y_ground_abs = getTileHeight(x, y);
+
+              // Neighbor heights in absolute space
+              const getNeighborDeckHeight = (nx: number, ny: number) => {
+                if (nx < 0 || nx >= GRID_SIZE || ny < 0 || ny >= GRID_SIZE) {
+                  return getTileHeight(x, y);
+                }
+                const tile = grid[ny]?.[nx];
+                if (tile && tile.buildingType === BuildingType.Bridge) {
+                  return getBridgeDeckAbsoluteHeight(nx, ny, grid);
+                }
+                return getTileHeight(nx, ny);
+              };
+
+              const hNeg = getNeighborDeckHeight(negX, negY);
+              const hPos = getNeighborDeckHeight(posX, posY);
+
+              const isNegBridge = negX >= 0 && negX < GRID_SIZE && negY >= 0 && negY < GRID_SIZE && grid[negY]?.[negX]?.buildingType === BuildingType.Bridge;
+              const isPosBridge = posX >= 0 && posX < GRID_SIZE && posY >= 0 && posY < GRID_SIZE && grid[posY]?.[posX]?.buildingType === BuildingType.Bridge;
+
+              // Relative Heights inside the group (which is positioned at yOffset = Y_ground_abs)
+              const Y_neg = hNeg - Y_ground_abs; // Relative height of negative neighbor
+              const Y_pos = hPos - Y_ground_abs; // Relative height of positive neighbor
+              const Y_deck = Y_deck_abs - Y_ground_abs; // Center bridge deck relative height
+              const pillarLength = Y_deck_abs - Y_ground_abs - 0.04;
+
+              // Decks and ramps configuration
+              interface BridgePart {
+                type: 'flat' | 'ramp';
+                position: [number, number, number];
+                rotation: [number, number, number];
+                length: number;
+                height: number;
+                side?: 'neg' | 'pos';
+              }
+
+              const parts: BridgePart[] = [];
+
+              // --- LEFT HALF DRAWING ---
+              if (isNegBridge) {
+                // Flat center deck for left half
+                parts.push({
+                  type: 'flat',
+                  position: [-0.25, Y_deck, 0],
+                  rotation: [0, 0, 0],
+                  length: 0.5,
+                  height: Y_deck
+                });
+              } else {
+                // Flat center connector of left half
+                parts.push({
+                  type: 'flat',
+                  position: [-0.075, Y_deck, 0],
+                  rotation: [0, 0, 0],
+                  length: 0.15,
+                  height: Y_deck
+                });
+                // Ramp slope of left half: from x = -0.5 (Y_neg) to x = -0.15 (Y_deck)
+                const dx = 0.35;
+                const dy = Y_deck - Y_neg;
+                const theta = Math.atan2(dy, dx);
+                const len = Math.sqrt(dx * dx + dy * dy);
+                parts.push({
+                  type: 'ramp',
+                  position: [-0.325, (Y_neg + Y_deck) / 2, 0],
+                  rotation: [0, 0, theta],
+                  length: len,
+                  height: (Y_neg + Y_deck) / 2,
+                  side: 'neg'
+                });
+              }
+
+              // --- RIGHT HALF DRAWING ---
+              if (isPosBridge) {
+                // Flat center deck for right half
+                parts.push({
+                  type: 'flat',
+                  position: [0.25, Y_deck, 0],
+                  rotation: [0, 0, 0],
+                  length: 0.5,
+                  height: Y_deck
+                });
+              } else {
+                // Flat center connector of right half
+                parts.push({
+                  type: 'flat',
+                  position: [0.075, Y_deck, 0],
+                  rotation: [0, 0, 0],
+                  length: 0.15,
+                  height: Y_deck
+                });
+                // Ramp slope of right half: from x = 0.15 (Y_deck) to x = 0.5 (Y_pos)
+                const dx = 0.35;
+                const dy = Y_pos - Y_deck;
+                const theta = Math.atan2(dy, dx);
+                const len = Math.sqrt(dx * dx + dy * dy);
+                parts.push({
+                  type: 'ramp',
+                  position: [0.325, (Y_deck + Y_pos) / 2, 0],
+                  rotation: [0, 0, theta],
+                  length: len,
+                  height: (Y_deck + Y_pos) / 2,
+                  side: 'pos'
+                });
+              }
+
+              return (
+                <group>
+                  {parts.map((p, idx) => {
+                    return (
+                      <group key={idx}>
+                        {/* Render the deck/ramp under its specific rotation and position */}
+                        <group position={p.position} rotation={p.rotation}>
+                          {/* Road deck */}
+                          <mesh castShadow receiveShadow position={[0, 0, 0]}>
+                            <boxGeometry args={[p.length, 0.08, 0.85]} />
+                            <meshStandardMaterial color="#334155" roughness={0.8} />
+                          </mesh>
+
+                          {/* Guardrails */}
+                          <mesh castShadow receiveShadow position={[0, 0.12, 0.42]}>
+                            <boxGeometry args={[p.length, 0.18, 0.06]} />
+                            <meshStandardMaterial color={railColor} roughness={0.4} />
+                          </mesh>
+                          <mesh castShadow receiveShadow position={[0, 0.12, -0.42]}>
+                            <boxGeometry args={[p.length, 0.18, 0.06]} />
+                            <meshStandardMaterial color={railColor} roughness={0.4} />
+                          </mesh>
+                        </group>
+
+                        {/* Solid ground abutment beneath the ramp */}
+                        {p.type === 'ramp' && (
+                          <mesh castShadow receiveShadow position={[p.side === 'neg' ? -0.325 : 0.325, p.height / 2, 0]}>
+                            <boxGeometry args={[0.35, p.height, 0.81]} />
+                            <meshStandardMaterial color="#475569" roughness={0.9} flatShading />
+                          </mesh>
+                        )}
+                      </group>
+                    );
+                  })}
+
+                  {/* --- Dynamic vertical support columns beneath segments if elevated --- */}
+                  {pillarLength > 0.1 && (
+                    <group>
+                      {/* Left vertical structural column */}
+                      <mesh castShadow receiveShadow position={[0, pillarLength / 2, -0.22]}>
+                        <boxGeometry args={[0.15, pillarLength, 0.15]} />
+                        <meshStandardMaterial color="#64748b" roughness={0.9} flatShading />
+                      </mesh>
+                      {/* Right vertical structural column */}
+                      <mesh castShadow receiveShadow position={[0, pillarLength / 2, 0.22]}>
+                        <boxGeometry args={[0.15, pillarLength, 0.15]} />
+                        <meshStandardMaterial color="#64748b" roughness={0.9} flatShading />
+                      </mesh>
+                      {/* Concrete crosscap brace support directly beneath road decks */}
+                      <mesh castShadow receiveShadow position={[0, pillarLength - 0.04, 0]}>
+                        <boxGeometry args={[0.2, 0.08, 0.65]} />
+                        <meshStandardMaterial color="#475569" roughness={0.9} flatShading />
+                      </mesh>
+                    </group>
+                  )}
+                </group>
+              );
+            }
+
           case BuildingType.Park:
             // "Botanical Sanctuary Eco-Gardens" styling
             const positions = [[-0.24, -0.24], [0.24, 0.24], [-0.24, 0.24], [0.24, -0.24]];
@@ -482,147 +615,6 @@ const ProceduralBuilding = React.memo(({
   );
 });
 
-// --- Dynamic Vehicles & congestion flow representation ---
-interface TrafficProps {
-  grid: Grid;
-  isNight: boolean;
-  isBlackout: boolean;
-  activeOverlay: OverlayType;
-}
-
-const TrafficSystem = ({ grid, isNight, isBlackout, activeOverlay }: TrafficProps) => {
-  const roadTiles = useMemo(() => {
-    const roads: { x: number, y: number }[] = [];
-    grid.forEach(row => row.forEach(tile => {
-      if (tile.buildingType === BuildingType.Road) roads.push({ x: tile.x, y: tile.y });
-    }));
-    return roads;
-  }, [grid]);
-
-  // Adjust cars dynamically relative to road counts
-  const carCount = Math.min(roadTiles.length * 1.5, 35);
-  const carsRef = useRef<THREE.InstancedMesh>(null);
-  const carsState = useRef<Float32Array>(new Float32Array(0)); 
-  const dummy = useMemo(() => new THREE.Object3D(), []);
-  
-  // Track serialized state of roads to prevent annoying resets when simulation updates non-road components
-  const prevRoadsRef = useRef<string>('');
-
-  useEffect(() => {
-    if (roadTiles.length < 2) return;
-
-    const currentSerialized = roadTiles.map(t => `${t.x},${t.y}`).join(';');
-    if (currentSerialized === prevRoadsRef.current && carsState.current.length === carCount * 7) {
-      return; // Skip resetting if the road network geometry is unchanged
-    }
-    prevRoadsRef.current = currentSerialized;
-
-    carsState.current = new Float32Array(carCount * 7); // [curX, curY, tarX, tarY, progress, speed, colorIndex]
-    const carColors = ['#ef4444', '#3b82f6', '#eab308', '#f8fafc', '#1e293b', '#a855f7'];
-    const newColors = new Float32Array(carCount * 3);
-
-    for (let i = 0; i < carCount; i++) {
-      const idx = i * 7;
-      const startNode = roadTiles[Math.floor(Math.random() * roadTiles.length)];
-      carsState.current[idx + 0] = startNode.x;
-      carsState.current[idx + 1] = startNode.y;
-      carsState.current[idx + 2] = startNode.x;
-      carsState.current[idx + 3] = startNode.y;
-      carsState.current[idx + 4] = 1.0; // trigger pick
-      carsState.current[idx + 5] = 0.015 + Math.random() * 0.015;
-
-      const randomColorIndex = Math.floor(Math.random() * carColors.length);
-      carsState.current[idx + 6] = randomColorIndex;
-      const color = new THREE.Color(carColors[randomColorIndex]);
-      newColors[i * 3 + 0] = color.r;
-      newColors[i * 3 + 1] = color.g;
-      newColors[i * 3 + 2] = color.b;
-    }
-
-    if (carsRef.current) {
-      carsRef.current.instanceColor = new THREE.InstancedBufferAttribute(newColors, 3);
-    }
-  }, [roadTiles, carCount]);
-
-  useFrame(() => {
-    if (!carsRef.current || roadTiles.length < 2 || carsState.current.length === 0) return;
-
-    for (let i = 0; i < carCount; i++) {
-      const idx = i * 7;
-      let curX = carsState.current[idx + 0];
-      let curY = carsState.current[idx + 1];
-      let tarX = carsState.current[idx + 2];
-      let tarY = carsState.current[idx + 3];
-      let progress = carsState.current[idx + 4];
-      const speed = carsState.current[idx + 5];
-
-      progress += speed;
-
-      if (progress >= 1.0) {
-        curX = tarX;
-        curY = tarY;
-        progress = 0;
-
-        const neighbors = roadTiles.filter(t => 
-          (Math.abs(t.x - curX) === 1 && t.y === curY) || 
-          (Math.abs(t.y - curY) === 1 && t.x === curX)
-        );
-
-        if (neighbors.length > 0) {
-          const next = neighbors[Math.floor(Math.random() * neighbors.length)];
-          tarX = next.x;
-          tarY = next.y;
-        } else {
-          const randomNode = roadTiles[Math.floor(Math.random() * roadTiles.length)];
-          curX = randomNode.x; curY = randomNode.y; tarX = randomNode.x; tarY = randomNode.y;
-        }
-      }
-
-      carsState.current[idx + 0] = curX;
-      carsState.current[idx + 1] = curY;
-      carsState.current[idx + 2] = tarX;
-      carsState.current[idx + 3] = tarY;
-      carsState.current[idx + 4] = progress;
-
-      const gx = MathUtils.lerp(curX, tarX, progress);
-      const gy = MathUtils.lerp(curY, tarY, progress);
-
-      const dx = tarX - curX;
-      const dy = tarY - curY;
-      const angle = Math.atan2(dy, dx);
-      
-      const offsetAmt = 0.16;
-      const len = Math.sqrt(dx * dx + dy * dy) || 1.0;
-      const offX = (-dy / len) * offsetAmt;
-      const offY = (dx / len) * offsetAmt;
-
-      const [wx, _, wz] = gridToWorld(gx + offX, gy + offY);
-
-      // Interpolate driving elevation correctly matching road heights of rolling hills 3D terrain
-      const curH = getTileHeight(curX, curY);
-      const tarH = getTileHeight(tarX, tarY);
-      const h = MathUtils.lerp(curH, tarH, progress);
-
-      dummy.position.set(wx, h + 0.08, wz);
-      dummy.rotation.set(0, -angle, 0);
-      dummy.scale.set(0.38, 0.11, 0.22); 
-      dummy.updateMatrix();
-
-      carsRef.current.setMatrixAt(i, dummy.matrix);
-    }
-    carsRef.current.instanceMatrix.needsUpdate = true;
-  });
-
-  if (roadTiles.length < 2) return null;
-
-  return (
-    <group>
-      <instancedMesh ref={carsRef} args={[boxGeo, undefined, carCount]} castShadow>
-        <meshStandardMaterial roughness={0.2} metalness={0.8} />
-      </instancedMesh>
-    </group>
-  );
-};
 
 // --- Dynamic Walking Citizens component ---
 interface PopulationProps {
@@ -632,136 +624,6 @@ interface PopulationProps {
   season: SeasonType;
 }
 
-const PopulationSystem = ({ population, grid, weather, season }: PopulationProps) => {
-  const agentCount = Math.min(Math.floor(population * 0.45 + 5), 45); 
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  const umbrellaRef = useRef<THREE.InstancedMesh>(null);
-
-  const walkableTiles = useMemo(() => {
-    const tiles: { x: number, y: number }[] = [];
-    grid.forEach(row => row.forEach(tile => {
-      if (tile.buildingType === BuildingType.Road || tile.buildingType === BuildingType.Park || tile.buildingType === BuildingType.None) {
-        tiles.push({ x: tile.x, y: tile.y });
-      }
-    }));
-    return tiles;
-  }, [grid]);
-
-  const agentsState = useRef<Float32Array>(new Float32Array(0));
-  const dummy = useMemo(() => new THREE.Object3D(), []);
-  const umbrellaDummy = useMemo(() => new THREE.Object3D(), []);
-
-  useEffect(() => {
-    if (agentCount === 0 || walkableTiles.length === 0) return;
-    agentsState.current = new Float32Array(agentCount * 6);
-    const newColors = new Float32Array(agentCount * 3);
-
-    for (let i = 0; i < agentCount; i++) {
-      const t = walkableTiles[Math.floor(Math.random() * walkableTiles.length)];
-      agentsState.current[i * 6 + 0] = t.x + getRandomRange(-0.35, 0.35);
-      agentsState.current[i * 6 + 1] = t.y + getRandomRange(-0.35, 0.35);
-      
-      const target = walkableTiles[Math.floor(Math.random() * walkableTiles.length)];
-      agentsState.current[i * 6 + 2] = target.x + getRandomRange(-0.35, 0.35);
-      agentsState.current[i * 6 + 3] = target.y + getRandomRange(-0.35, 0.35);
-      
-      agentsState.current[i * 6 + 4] = 0.006 + Math.random() * 0.008;
-      agentsState.current[i * 6 + 5] = Math.random() * Math.PI * 2;
-
-      const randomColor = new THREE.Color(getRandomClothesColor());
-      newColors[i * 3 + 0] = randomColor.r;
-      newColors[i * 3 + 1] = randomColor.g;
-      newColors[i * 3 + 2] = randomColor.b;
-    }
-
-    if (meshRef.current) {
-      meshRef.current.instanceColor = new THREE.InstancedBufferAttribute(newColors, 3);
-    }
-  }, [agentCount, walkableTiles]);
-
-  useFrame((state) => {
-    if (!meshRef.current || agentCount === 0 || agentsState.current.length === 0) return;
-    const time = state.clock.elapsedTime;
-
-    const isRaining = weather === 'rain' || weather === 'thunderstorm';
-
-    for (let i = 0; i < agentCount; i++) {
-      const idx = i * 6;
-      let x = agentsState.current[idx + 0];
-      let y = agentsState.current[idx + 1];
-      let tx = agentsState.current[idx + 2];
-      let ty = agentsState.current[idx + 3];
-      const speed = agentsState.current[idx + 4] * (season === 'winter' ? 0.7 : 1.0); // slower commutes in snow
-      const animOffset = agentsState.current[idx + 5];
-
-      const dx = tx - x;
-      const dy = ty - y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist < 0.12) {
-        if (walkableTiles.length > 0) {
-          const target = walkableTiles[Math.floor(Math.random() * walkableTiles.length)];
-          tx = target.x + getRandomRange(-0.35, 0.35);
-          ty = target.y + getRandomRange(-0.35, 0.35);
-          agentsState.current[idx + 2] = tx;
-          agentsState.current[idx + 3] = ty;
-        }
-      } else {
-        x += (dx / dist) * speed;
-        y += (dy / dist) * speed;
-        agentsState.current[idx + 0] = x;
-        agentsState.current[idx + 1] = y;
-      }
-
-      const [wx, _, wz] = gridToWorld(x, y);
-      const bounce = Math.abs(Math.sin(time * 12 + animOffset)) * 0.024;
-
-      // Ground walker anchored smoothly to 3D terrain elevation
-      const h = getTileHeight(Math.round(x), Math.round(y));
-
-      dummy.position.set(wx, h - 0.02 + bounce, wz);
-      dummy.rotation.set(0, -Math.atan2(dy, dx), 0);
-      dummy.scale.set(0.065, 0.15, 0.065);
-      dummy.updateMatrix();
-      meshRef.current.setMatrixAt(i, dummy.matrix);
-
-      // Render colorful Umbrellas during rain/storms
-      if (umbrellaRef.current) {
-        if (isRaining) {
-          umbrellaDummy.position.set(wx, h + 0.14 + bounce, wz);
-          umbrellaDummy.scale.set(0.35, 0.05, 0.35);
-          umbrellaDummy.rotation.set(0, i, 0);
-          umbrellaDummy.updateMatrix();
-          umbrellaRef.current.setMatrixAt(i, umbrellaDummy.matrix);
-        } else {
-          // Hide under ground platform
-          umbrellaDummy.position.set(0, -10, 0);
-          umbrellaDummy.scale.setScalar(0.001);
-          umbrellaDummy.updateMatrix();
-          umbrellaRef.current.setMatrixAt(i, umbrellaDummy.matrix);
-        }
-      }
-    }
-    meshRef.current.instanceMatrix.needsUpdate = true;
-    if (umbrellaRef.current) {
-      umbrellaRef.current.instanceMatrix.needsUpdate = true;
-    }
-  });
-
-  if (agentCount === 0) return null;
-
-  return (
-    <group>
-      <instancedMesh ref={meshRef} args={[boxGeo, undefined, agentCount]} castShadow>
-        <meshStandardMaterial roughness={0.8} />
-      </instancedMesh>
-      <instancedMesh ref={umbrellaRef} args={[coneGeo, undefined, agentCount]} castShadow>
-        <meshStandardMaterial color="#3b82f6" roughness={0.1} flatShading />
-      </instancedMesh>
-    </group>
-  );
-};
-
 const getRandomClothesColor = () => {
   const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#e2e8f0', '#06b6d4'];
   return colors[Math.floor(Math.random() * colors.length)];
@@ -770,54 +632,95 @@ const getRandomClothesColor = () => {
 const getRandomRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
 // --- Advanced Meandering River component ---
-// Coordinates representing a beautiful river flowing diagonally
-const isRiverCell = (x: number, y: number) => {
-  // Sinusoidal meandering trail slicing the 15x15 metropolis map
-  const pathCenter = 7 + Math.sin(y * 0.4) * 2;
-  return Math.abs(x - pathCenter) < 1.1;
-};
-
-// Procedural heightmap generator using stable trigonometric waveforms (simulating noise)
-// Ensures clean, smooth hills and peaks across the map without boundary seams
-const getTileHeight = (x: number, y: number) => {
-  if (isRiverCell(x, y)) {
-    return -0.42; // low elevation valley bed for the river
-  }
-  
-  // Clean multi-frequency harmonic heightmap sampling to avoid chunk boundaries and seams
-  const freq1 = 0.25;
-  const freq2 = 0.55;
-  const h1 = Math.sin(x * freq1) * Math.cos(y * freq1) * 0.55; // primary rolling hills
-  const h2 = Math.sin(x * freq2 + 2.0) * Math.cos(y * freq2 + 1.0) * 0.18; // secondary terrain ripples
-  
-  return h1 + h2;
-};
-
-const WaterRiverMesh = ({ x, y, pollutionLevel }: { x: number, y: number, pollutionLevel: number }) => {
+const WaterRiverMesh = ({ 
+  x, 
+  y, 
+  pollutionLevel,
+  onHover,
+  onLeave,
+  onClick
+}: { 
+  x: number; 
+  y: number; 
+  pollutionLevel: number;
+  onHover: (x: number, y: number) => void;
+  onLeave: () => void;
+  onClick: (x: number, y: number) => void;
+}) => {
   const [wx, _, wz] = gridToWorld(x, y);
   const waveRef = useRef<THREE.Mesh>(null);
+  const rippleRef = useRef<THREE.Mesh>(null);
+  const dragStart = useRef({ x: 0, y: 0 });
 
   useFrame((state) => {
+    const time = state.clock.getElapsedTime();
     if (waveRef.current) {
-      const time = state.clock.getElapsedTime();
-      // Wave water vertical drift
-      waveRef.current.position.y = -0.32 + Math.sin(time * 2.0 + x * 0.5 + y * 0.5) * 0.012;
+      waveRef.current.position.y = -0.25 + Math.sin(time * 1.5 + x * 0.35 + y * 0.35) * 0.012;
+    }
+    if (rippleRef.current) {
+      rippleRef.current.position.y = -0.12 + Math.sin(time * 1.2 + x * 0.25 + y * 0.25) * 0.008;
+      const s = 0.92 + Math.cos(time * 1.8 + (x + y) * 0.45) * 0.03;
+      rippleRef.current.scale.set(s, 1, s);
     }
   });
 
-  // Green polluted water tint vs clean azure turquoise
   const waterColor = useMemo(() => {
-    const clean = new THREE.Color('#0ea5e9');
-    const toxic = new THREE.Color('#4d7c0f'); // murky slime swamp green
+    const clean = new THREE.Color('#0284c7'); // Rich tropical turquoise
+    const toxic = new THREE.Color('#15803d'); // Algae toxic green
     const factor = Math.min(pollutionLevel / 100, 1.0);
     return clean.clone().lerp(toxic, factor);
   }, [pollutionLevel]);
 
   return (
-    <mesh ref={waveRef} position={[wx, -0.32, wz]} receiveShadow>
-      <boxGeometry args={[1, 0.4, 1]} />
-      <meshStandardMaterial color={waterColor} roughness={0.08} metalness={0.9} />
-    </mesh>
+    <group
+      onPointerEnter={(e) => { e.stopPropagation(); onHover(x, y); }}
+      onPointerOut={(e) => { e.stopPropagation(); onLeave(); }}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+        dragStart.current = { x: e.clientX, y: e.clientY };
+      }}
+      onPointerUp={(e) => {
+        e.stopPropagation();
+        const dist = Math.hypot(e.clientX - dragStart.current.x, e.clientY - dragStart.current.y);
+        if (dist < 5 && e.button === 0) {
+          onClick(x, y);
+        }
+      }}
+    >
+      {/* 1. Deep solid riverbed / soil base to give physical volume depth */}
+      <mesh position={[wx, -0.6, wz]} receiveShadow>
+        <boxGeometry args={[1, 0.4, 1]} />
+        <meshStandardMaterial color="#0b1e1f" roughness={0.95} flatShading />
+      </mesh>
+
+      {/* 2. Primary highly reflective glassy animated water fluid block */}
+      <mesh ref={waveRef} position={[wx, -0.25, wz]} receiveShadow>
+        <boxGeometry args={[1, 0.35, 1]} />
+        <meshStandardMaterial 
+          color={waterColor} 
+          roughness={0.05} 
+          metalness={0.92} 
+          transparent={true} 
+          opacity={0.88} 
+          emissive={waterColor}
+          emissiveIntensity={0.2}
+        />
+      </mesh>
+
+      {/* 3. Surface Foam & Ripples */}
+      <mesh ref={rippleRef} position={[wx, -0.12, wz]}>
+        <boxGeometry args={[0.98, 0.02, 0.98]} />
+        <meshStandardMaterial 
+          color="#f0f9ff" 
+          roughness={0.1} 
+          metalness={0.1} 
+          transparent={true} 
+          opacity={0.25} 
+          emissive="#ffffff"
+          emissiveIntensity={0.1}
+        />
+      </mesh>
+    </group>
   );
 };
 
@@ -847,7 +750,7 @@ const GroundTile = React.memo(({
 }: TileProps) => {
   const { x, y, buildingType } = tile;
   const [wx, _, wz] = gridToWorld(x, y);
-  
+  const dragStart = useRef({ x: 0, y: 0 });
   const hash = getHash(x, y);
 
   // Overlay Heatmap colors mapping
@@ -860,16 +763,15 @@ const GroundTile = React.memo(({
     }
 
     if (activeOverlay === 'land_value') {
-      // Proximity mock thermal heatmap based on park structures
-      const distToPark = 5; // simplified logic
-      if (buildingType === BuildingType.Park) return '#dc2626'; // Ultra hot
+      const distToPark = 5; 
+      if (buildingType === BuildingType.Park) return '#dc2626'; 
       if (buildingType === BuildingType.Commercial) return '#f97316';
       if (buildingType === BuildingType.Residential) return '#eab308';
-      return '#3b82f6'; // Cold
+      return '#3b82f6'; 
     }
 
     if (activeOverlay === 'pollution') {
-      if (buildingType === BuildingType.Industrial) return '#a855f7'; // Toxic purple
+      if (buildingType === BuildingType.Industrial) return '#a855f7'; 
       return hash > 0.6 ? '#c084fc' : '#1e1b4b';
     }
 
@@ -879,37 +781,42 @@ const GroundTile = React.memo(({
       }
     }
 
-    // Default physical theme colored materials
     if (buildingType === BuildingType.Road) {
-      return '#334155'; // Dark tarmac slate
+      return '#334155'; 
     }
 
     if (buildingType === BuildingType.None) {
       if (isRiverCell(x, y)) {
         return '#0284c7';
       }
-      // Season-aware terrain maps
       if (season === 'winter') {
-        return '#f1f5f9'; // Soft fluffy snow
+        return '#f1f5f9'; 
       }
       if (season === 'autumn') {
-        return '#78350f'; // Maple brown forest floor
+        return '#78350f'; 
       }
-      return hash > 0.6 ? '#15803d' : '#166534'; // Lush green forest
+      return hash > 0.6 ? '#15803d' : '#166534'; 
     }
 
-    return '#475569'; // Grey concrete foundation slab
+    return '#475569'; 
   }, [activeOverlay, buildingType, season, x, y, hash]);
 
-  // Dynamically sample the procedural height coordinate for the tile
   const h = getTileHeight(x, y);
-  const bottomY = -1.2; // stable deep bedrock foundation level for columns
+  const bottomY = -1.2; 
   const thickness = h - bottomY;
   const centerY = bottomY + thickness / 2;
 
-  // Slower performance paths bypass water meshes for river logic
-  if (buildingType === BuildingType.None && isRiverCell(x, y) && activeOverlay === 'none') {
-    return <WaterRiverMesh x={x} y={y} pollutionLevel={pollutionLevel} />;
+  if ((buildingType === BuildingType.None || buildingType === BuildingType.Bridge) && isRiverCell(x, y) && activeOverlay === 'none') {
+    return (
+      <WaterRiverMesh 
+        x={x} 
+        y={y} 
+        pollutionLevel={pollutionLevel} 
+        onHover={onHover}
+        onLeave={onLeave}
+        onClick={onClick}
+      />
+    );
   }
 
   return (
@@ -920,7 +827,14 @@ const GroundTile = React.memo(({
       onPointerOut={(e) => { e.stopPropagation(); onLeave(); }}
       onPointerDown={(e) => {
         e.stopPropagation();
-        if (e.button === 0) onClick(x, y);
+        dragStart.current = { x: e.clientX, y: e.clientY };
+      }}
+      onPointerUp={(e) => {
+        e.stopPropagation();
+        const dist = Math.hypot(e.clientX - dragStart.current.x, e.clientY - dragStart.current.y);
+        if (dist < 5 && e.button === 0) {
+          onClick(x, y);
+        }
       }}
     >
       <boxGeometry args={[1.0, thickness, 1.0]} />
@@ -934,11 +848,18 @@ const Cursor = ({ x, y, color }: { x: number, y: number, color: string }) => {
   const [wx, _, wz] = gridToWorld(x, y);
   const h = getTileHeight(x, y);
   return (
-    <mesh position={[wx, h + 0.04, wz]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
-      <planeGeometry args={[0.98, 0.98]} />
-      <meshBasicMaterial color={color} side={THREE.DoubleSide} depthTest={false} />
-      <Outlines thickness={0.06} color="white" />
-    </mesh>
+    <group position={[wx, h + 0.04, wz]} rotation={[-Math.PI / 2, 0, 0]}>
+      {/* Outer bounding border */}
+      <mesh raycast={() => null}>
+        <planeGeometry args={[1.0, 1.0]} />
+        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} depthTest={false} />
+      </mesh>
+      {/* Inner filled selector accent */}
+      <mesh position={[0, 0, 0.005]} raycast={() => null}>
+        <planeGeometry args={[0.88, 0.88]} />
+        <meshBasicMaterial color={color} side={THREE.DoubleSide} depthTest={false} transparent opacity={0.7} />
+      </mesh>
+    </group>
   );
 };
 
@@ -1051,7 +972,21 @@ const IsoMap: React.FC<IsoMapProps> = ({
   const skyColor = WEATHERS[weather].skyColor;
 
   const showPreview = hoveredTile && grid[hoveredTile.y][hoveredTile.x].buildingType === BuildingType.None && hoveredTool !== BuildingType.None;
-  const previewColor = showPreview ? BUILDINGS[hoveredTool].color : 'white';
+  
+  // Calculate active tool for preview, converting Road on water to Bridge
+  const activePreviewTool = useMemo(() => {
+    if (!hoveredTile || hoveredTool !== BuildingType.Road) return hoveredTool;
+    return isRiverCell(hoveredTile.x, hoveredTile.y) ? BuildingType.Bridge : BuildingType.Road;
+  }, [hoveredTool, hoveredTile]);
+
+  const previewColor = useMemo(() => {
+    if (!showPreview) return 'white';
+    if (activePreviewTool === BuildingType.Bridge && hoveredTile) {
+      const { isValid } = getBridgeOrientationAndValidity(hoveredTile.x, hoveredTile.y, grid);
+      return isValid ? '#10b981' : '#f43f5e'; // emerald for valid, red for invalid!
+    }
+    return BUILDINGS[activePreviewTool].color;
+  }, [showPreview, activePreviewTool, hoveredTile, grid]);
   const isBulldoze = hoveredTool === BuildingType.None;
   const previewPos = hoveredTile ? gridToWorld(hoveredTile.x, hoveredTile.y) : [0, 0, 0];
 
@@ -1084,27 +1019,27 @@ const IsoMap: React.FC<IsoMapProps> = ({
           target={[0, -0.5, 0]}
         />
 
-        <color attach="background" args={[isNight ? '#030712' : skyColor]} />
-        <fogExp2 attach="fog" color={isNight ? '#030712' : skyColor} density={weather === 'fog' ? 0.045 : 0.005} />
+        <color attach="background" args={[isNight ? '#0b1220' : skyColor]} />
+        <fogExp2 attach="fog" color={isNight ? '#0b1220' : skyColor} density={weather === 'fog' ? 0.045 : 0.005} />
 
         {/* Ambient environment setup with optimal balance to prevent pitch-dark look */}
         <ambientLight 
-          intensity={isNight ? 0.25 : WEATHERS[weather].ambientIntensity * 0.9} 
-          color={isNight ? '#1e1b4b' : '#f8fafc'} 
+          intensity={isNight ? 0.78 : WEATHERS[weather].ambientIntensity * 0.9} 
+          color={isNight ? '#3b426e' : '#f8fafc'} 
         />
 
         {/* Hemisphere light representing physical sky dome and ground bounce light */}
         <hemisphereLight
-          skyColor={isNight ? '#1e1b4b' : '#38bdf8'}
-          groundColor={isNight ? '#0b1329' : '#14532d'}
-          intensity={isNight ? 0.2 : 0.65}
+          skyColor={isNight ? '#5c54d6' : '#38bdf8'}
+          groundColor={isNight ? '#1e183a' : '#14532d'}
+          intensity={isNight ? 0.55 : 0.65}
         />
 
         {/* Camera-aligned soft fill light to keep camera-facing sides illuminated and legible */}
         <directionalLight
           position={[20, 24, 20]} // mirrors camera vector directions directly
-          intensity={isNight ? 0.12 : 0.65}
-          color={isNight ? '#4f46e5' : '#f0f9ff'}
+          intensity={isNight ? 0.55 : 0.65}
+          color={isNight ? '#7c80f4' : '#f0f9ff'}
           castShadow={false}
         />
         
@@ -1128,7 +1063,7 @@ const IsoMap: React.FC<IsoMapProps> = ({
           <directionalLight
             castShadow
             position={[moonAngle.x, moonAngle.y, moonAngle.z]}
-            intensity={0.35}
+            intensity={0.72}
             color="#bae6fd" // beautiful luminous cooling moonlight glow
             shadow-mapSize={[1024, 1024]}
             shadow-camera-left={-20} 
@@ -1145,15 +1080,16 @@ const IsoMap: React.FC<IsoMapProps> = ({
         {isNight && !isBlackout && (
           <group>
             {grid.map((row, y) => row.map((tile, x) => {
-              if (tile.buildingType !== BuildingType.None && tile.buildingType !== BuildingType.Road && getHash(x, y) > 0.4) {
+              if (tile.buildingType !== BuildingType.None && tile.buildingType !== BuildingType.Road && tile.buildingType !== BuildingType.Bridge && getHash(x, y) > 0.4) {
                 const [wx, _, wz] = gridToWorld(x, y);
+                const h = getTileHeight(x, y);
                 return (
                   <pointLight 
                     key={`light-${x}-${y}`} 
                     color="#fef08a" 
-                    intensity={0.4} 
+                    intensity={1.25} 
                     distance={3.5} 
-                    position={[wx, 0.4, wz]} 
+                    position={[wx, h + 0.65, wz]} 
                   />
                 );
               }
@@ -1196,7 +1132,11 @@ const IsoMap: React.FC<IsoMapProps> = ({
                       season={season}
                       averageHappiness={averageHappiness}
                       pollutionLevel={congestionLevel}
+                      grid={grid}
                     />
+                  )}
+                  {(tile.buildingType === BuildingType.Road || tile.buildingType === BuildingType.Bridge) && (x + y) % 3 === 0 && (
+                    <LightPole x={x} y={y} isNight={isNight} isBlackout={isBlackout} grid={grid} />
                   )}
                   {activeFire && (
                     <FireDisasterVFX position={[0, 0, 0]} />
@@ -1218,7 +1158,7 @@ const IsoMap: React.FC<IsoMapProps> = ({
             <group position={[previewPos[0], 0, previewPos[2]]}>
               <Float speed={4} floatIntensity={0.12} floatingRange={[0, 0.1]}>
                 <ProceduralBuilding 
-                  type={hoveredTool} 
+                  type={activePreviewTool}
                   baseColor={previewColor} 
                   x={hoveredTile.x} 
                   y={hoveredTile.y} 
@@ -1228,6 +1168,7 @@ const IsoMap: React.FC<IsoMapProps> = ({
                   season={season}
                   averageHappiness={95}
                   pollutionLevel={10}
+                  grid={grid}
                 />
               </Float>
             </group>
@@ -1248,8 +1189,6 @@ const IsoMap: React.FC<IsoMapProps> = ({
 
         {/* Orbit drone / camera automation views */}
         <CinematicCameraEngine active={isCinemaActive} style={isCinemaActive ? 'flyover' : 'default'} />
-
-        <SoftShadows size={8} samples={6} />
       </Canvas>
     </div>
   );

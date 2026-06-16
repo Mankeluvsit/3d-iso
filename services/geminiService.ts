@@ -31,7 +31,7 @@ const goalSchema = {
     },
     buildingType: {
       type: Type.STRING,
-      enum: [BuildingType.Residential, BuildingType.Commercial, BuildingType.Industrial, BuildingType.Park, BuildingType.Road],
+      enum: [BuildingType.Residential, BuildingType.Commercial, BuildingType.Industrial, BuildingType.Park, BuildingType.Road, BuildingType.Bridge],
       description: "Required if targetType is building_count.",
     },
     reward: {

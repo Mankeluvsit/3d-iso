@@ -39,7 +39,7 @@ export class PathfindingService {
     grid: Grid,
     start: RouteCoord,
     end: RouteCoord,
-    allowance: BuildingType[] = [BuildingType.Road]
+    allowance: BuildingType[] = [BuildingType.Road, BuildingType.Bridge]
   ): RouteCoord[] | null {
     const key = this.makeRouteKey(start, end, allowance.join('-'));
     if (this.routeCache.has(key)) {

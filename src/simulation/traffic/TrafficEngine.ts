@@ -25,11 +25,11 @@ export class TrafficEngine {
   }
 
   public update(delta: number, grid: any[][]): void {
-    // 1. Gather all road coordinates
+    // 1. Gather all road and bridge coordinates
     const roads: { x: number; y: number }[] = [];
     for (let y = 0; y < grid.length; y++) {
       for (let x = 0; x < grid[y].length; x++) {
-        if (grid[y][x].buildingType === 'Road') {
+        if (grid[y][x].buildingType === 'Road' || grid[y][x].buildingType === 'Bridge') {
           roads.push({ x, y });
         }
       }

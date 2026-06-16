@@ -82,5 +82,19 @@
     "sewageConsumed": 0,
     "internetConsumed": 0,
     "jobsProvided": 0
+  },
+  "Bridge": {
+    "type": "Bridge",
+    "cost": 30,
+    "name": "Bridge",
+    "description": "Builds over water.",
+    "color": "#94a3b8",
+    "popGen": 0,
+    "incomeGen": 0,
+    "powerConsumed": 0,
+    "waterConsumed": 0,
+    "sewageConsumed": 0,
+    "internetConsumed": 0,
+    "jobsProvided": 0
   }
 }
