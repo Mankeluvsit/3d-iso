@@ -1089,8 +1089,23 @@ const IsoMap: React.FC<IsoMapProps> = ({
 
         {/* Ambient environment setup with optimal balance to prevent pitch-dark look */}
         <ambientLight 
-          intensity={isNight ? 0.32 : WEATHERS[weather].ambientIntensity * 1.15} 
+          intensity={isNight ? 0.25 : WEATHERS[weather].ambientIntensity * 0.9} 
           color={isNight ? '#1e1b4b' : '#f8fafc'} 
+        />
+
+        {/* Hemisphere light representing physical sky dome and ground bounce light */}
+        <hemisphereLight
+          skyColor={isNight ? '#1e1b4b' : '#38bdf8'}
+          groundColor={isNight ? '#0b1329' : '#14532d'}
+          intensity={isNight ? 0.2 : 0.65}
+        />
+
+        {/* Camera-aligned soft fill light to keep camera-facing sides illuminated and legible */}
+        <directionalLight
+          position={[20, 24, 20]} // mirrors camera vector directions directly
+          intensity={isNight ? 0.12 : 0.65}
+          color={isNight ? '#4f46e5' : '#f0f9ff'}
+          castShadow={false}
         />
         
         {/* Dynamic moving Sun / Moon lighting arc with balanced directional sources and customized shadow bias */}
@@ -1098,7 +1113,7 @@ const IsoMap: React.FC<IsoMapProps> = ({
           <directionalLight
             castShadow
             position={[sunAngle.x, sunAngle.y, sunAngle.z]}
-            intensity={sunIntensity}
+            intensity={sunIntensity * 0.8}
             color={sunColor}
             shadow-mapSize={[2048, 2048]}
             shadow-camera-left={-20} 
@@ -1113,7 +1128,7 @@ const IsoMap: React.FC<IsoMapProps> = ({
           <directionalLight
             castShadow
             position={[moonAngle.x, moonAngle.y, moonAngle.z]}
-            intensity={0.4}
+            intensity={0.35}
             color="#bae6fd" // beautiful luminous cooling moonlight glow
             shadow-mapSize={[1024, 1024]}
             shadow-camera-left={-20} 

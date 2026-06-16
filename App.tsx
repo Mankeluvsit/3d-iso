@@ -107,15 +107,25 @@ export default function App() {
     return () => cancelAnimationFrame(frameId);
   }, [autoTime, audioVolume, weather, stats.population, activeDisasters.length]);
 
-  // Start game callback
-  const handleStartGame = (enableAI: boolean) => {
+  // Start game callback with custom config capabilities
+  const handleStartGame = (
+    enableAI: boolean, 
+    customMoney: number, 
+    startingSeason?: SeasonType, 
+    startingWeather?: WeatherType, 
+    startingTime?: number
+  ) => {
     setAiEnabled(enableAI);
+    if (startingSeason) setSeason(startingSeason);
+    if (startingWeather) setWeather(startingWeather);
+    if (startingTime !== undefined) setTimeOfDay(startingTime);
+    setStats((prev) => ({ ...prev, money: customMoney }));
     setGameStarted(true);
 
     // Warm sound context
     soundEngineRef.current?.start();
 
-    // Instantiate worker coordination thread
+    // Instantiate worker coordination thread with start config params
     workerManagerRef.current = new SimulationWorkerManager((snapshot: GameStateSnapshot) => {
       // Receive full state snapshot updates
       setStats(snapshot.stats);
@@ -129,7 +139,7 @@ export default function App() {
       setTelemetryReport(snapshot.telemetryReport);
       setActiveScenarioName(snapshot.activeScenarioName);
       setActiveScenarioGoalStatus(snapshot.activeScenarioGoalStatus);
-    });
+    }, { startingMoney: customMoney, enableAI });
   };
 
   // Clean thread up on unmount

@@ -12,7 +12,7 @@ export class SimulationWorkerManager {
   private mockInterval: any = null;
   private mockKernel: any = null;
 
-  constructor(private onMessage: OnMsgCallback) {
+  constructor(private onMessage: OnMsgCallback, private initData?: { startingMoney: number; enableAI: boolean }) {
     this.init();
   }
 
@@ -31,8 +31,8 @@ export class SimulationWorkerManager {
         }
       };
 
-      // Start tick inside worker
-      this.worker.postMessage({ type: 'INIT' });
+      // Start tick inside worker with initial configuration options
+      this.worker.postMessage({ type: 'INIT', data: this.initData });
       console.log("Dedicated simulation Web Worker instantiated successfully.");
     } catch (e) {
       console.warn("Sandbox/CORS constraints blocked Web Worker instantiation. Activating main-thread Simulation MockWorker fallback gracefully.", e);
@@ -44,9 +44,18 @@ export class SimulationWorkerManager {
     import('../kernel/GameKernel').then(({ GameKernel }) => {
       this.mockKernel = new GameKernel();
       
-      this.mockKernel.generateNewAIGoal().then(() => {
+      if (this.initData?.startingMoney !== undefined) {
+        this.mockKernel.getResources().set('money', this.initData.startingMoney);
+        this.mockKernel.getEconomyEngine().setTreasury(this.initData.startingMoney);
+      }
+
+      if (this.initData?.enableAI !== false) {
+        this.mockKernel.generateNewAIGoal().then(() => {
+          this.emitMockSnapshot();
+        });
+      } else {
         this.emitMockSnapshot();
-      });
+      }
 
       this.mockInterval = setInterval(() => {
         this.mockKernel.tick();

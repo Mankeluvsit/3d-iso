@@ -19,10 +19,22 @@ self.onmessage = (event: MessageEvent) => {
 
   switch (type) {
     case 'INIT':
-      // Reset state and generate first goal
-      kernel.generateNewAIGoal().then(() => {
+      // Configure starting resources if customized
+      if (data && data.startingMoney !== undefined) {
+        kernel.getResources().set('money', data.startingMoney);
+        kernel.getEconomyEngine().setTreasury(data.startingMoney);
+      }
+      
+      // Generate first goal only if AI is enabled
+      const hasAI = data?.enableAI !== false;
+      if (hasAI) {
+        kernel.generateNewAIGoal().then(() => {
+          postSnapshot();
+        });
+      } else {
+        // Clear any goals for freeplay
         postSnapshot();
-      });
+      }
 
       // Start tick interval timer (fixed ticks)
       if (tickTimer) clearInterval(tickTimer);
