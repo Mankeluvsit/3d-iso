@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { MathUtils } from 'three';
 import { Grid, BuildingType, TileData } from '../../types';
 import { GRID_SIZE, BUILDINGS } from '../../constants';
-import { WeatherType, SeasonType, OverlayType, WEATHERS, SEASONS } from '../../src/kernel/visual/VisualEngineState';
+import { WeatherType, SeasonType, OverlayType, WEATHERS, SEASONS, CameraStyle } from '../../src/kernel/visual/VisualEngineState';
 import { getRoadSurfaceHeightAt, getHash, gridToWorld, WORLD_OFFSET, isRiverCell, getTileHeight, getBridgeDeckAbsoluteHeight } from './utils';
 import { LightPole } from './components/LightPole';
 import { TrafficSystem } from './components/TrafficSystem';
@@ -1030,7 +1030,7 @@ const IsoMap: React.FC<IsoMapProps> = ({
 
         {/* Hemisphere light representing physical sky dome and ground bounce light */}
         <hemisphereLight
-          skyColor={isNight ? '#5c54d6' : '#38bdf8'}
+          color={isNight ? '#5c54d6' : '#38bdf8'}
           groundColor={isNight ? '#1e183a' : '#14532d'}
           intensity={isNight ? 0.55 : 0.65}
         />
