@@ -1,12 +1,14 @@
 import React, { useMemo, useRef, useEffect } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree, ThreeElements } from '@react-three/fiber';
 import * as THREE from 'three';
 import { MathUtils } from 'three';
 import { Grid, BuildingType } from '../../../types';
+import { OverlayType } from '../../../src/kernel/visual/VisualEngineState';
 import { getRoadSurfaceHeightAt, gridToWorld } from '../utils';
 import { boxGeo } from './geometries'; // Assuming I move these next
 
 interface TrafficProps {
+  activeOverlay: OverlayType;
   grid: Grid;
   isNight: boolean;
   isBlackout: boolean;
