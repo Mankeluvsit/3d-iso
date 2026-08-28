@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { BuildingType, Grid } from '../../../types';
 import { getHash, getTileHeight } from '../utils';
@@ -35,7 +36,7 @@ const ConstructionBuilding = ({ height }: { height: number }) => {
   const progressMeshRef = React.useRef<THREE.Mesh>(null);
   const flashLightRef = React.useRef<THREE.PointLight>(null);
 
-  React.useFrame((state: any) => {
+  useFrame((state: any) => {
     const time = state.clock.getElapsedTime();
     if (progressMeshRef.current) {
       progressMeshRef.current.position.y = -0.3 + Math.sin(time) * 0.05;
@@ -76,7 +77,7 @@ const ConstructionBuilding = ({ height }: { height: number }) => {
 // Need SmokeStackProps
 const SmokeStackProps = ({ position, pollutionLevel }: { position: [number, number, number], pollutionLevel: number }) => {
   const ref = React.useRef<THREE.Group>(null);
-  React.useFrame((state: any) => {
+  useFrame((state: any) => {
     if (ref.current) {
       ref.current.children.forEach((child, i) => {
         const cloud = child as THREE.Mesh;
