@@ -8,6 +8,12 @@ This contains everything you need to run your app locally.
 
 View your app in AI Studio: https://ai.studio/apps/e750eb4b-8859-40d2-b49f-7852c86b912f
 
+## Documentation
+
+See the [Repository guide](docs/index.html) for the architecture, the tick and command flow, the simulation rules, and the known limits. It uses diagrams and Simplified Technical English.
+
+GitHub Pages publishes the guide at https://mankeluvsit.github.io/3d-iso/. The workflow in `.github/workflows/pages.yml` deploys the `docs` folder on each push to `main`.
+
 ## Run Locally
 
 **Prerequisites:**  Node.js

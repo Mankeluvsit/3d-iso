@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkyMetropolis — Repository Guide (ASD-STE100)</title>
+<meta name="description" content="Technical guide to the SkyMetropolis repository, written to the writing rules of ASD-STE100 Simplified Technical English.">
+<style>
+  :root{
+    --bg:#070d19;
+    --panel:#0d1627;
+    --panel-2:#111d33;
+    --line:#1e2b42;
+    --line-2:#2b3b57;
+    --text:#e6edf7;
+    --muted:#93a4bd;
+    --dim:#6f829d;
+    --indigo:#8b9cff;
+    --cyan:#38d9ef;
+    --emerald:#4ade9b;
+    --amber:#fbbf24;
+    --rose:#fb7185;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;scroll-padding-top:24px}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1100px 600px at 78% -10%, #14213c 0%, transparent 60%),
+      radial-gradient(800px 500px at 0% 0%, #101a2e 0%, transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font:16px/1.68 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--indigo);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{display:grid;grid-template-columns:268px minmax(0,1fr);gap:56px;max-width:1420px;margin:0 auto;padding:0 34px}
+  /* ---------- Sidebar ---------- */
+  nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:34px 0 56px;font-size:13px;line-height:1.5}
+  nav.toc .brand{font-weight:800;letter-spacing:.02em;font-size:14px;color:#fff;display:flex;align-items:center;gap:9px;margin-bottom:4px}
+  nav.toc .brand i{width:9px;height:9px;border-radius:3px;background:linear-gradient(135deg,var(--cyan),var(--indigo));display:inline-block}
+  nav.toc .sub{color:var(--dim);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin:0 0 22px 18px}
+  nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:s}
+  nav.toc li{counter-increment:s;margin:0}
+  nav.toc li a{display:block;padding:5px 10px 5px 0;color:var(--muted);border-left:2px solid transparent;padding-left:12px;font-size:12.5px}
+  nav.toc li a::before{content:counter(s,decimal-leading-zero) "  ";color:var(--dim);font-family:var(--mono);font-size:10.5px}
+  nav.toc li a:hover{color:#fff;border-left-color:var(--indigo);text-decoration:none;background:#0f1a2c}
+  nav.toc .side-note{margin:26px 0 0 12px;padding:12px;border:1px solid var(--line);border-radius:12px;color:var(--dim);font-size:11.5px;background:#0a1424}
+  /* ---------- Main ---------- */
+  main{min-width:0;padding:44px 0 140px;max-width:1010px}
+  header.hero{border-bottom:1px solid var(--line);padding-bottom:34px;margin-bottom:14px}
+  .kicker{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+  .pill{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#b9c7dc;border:1px solid var(--line-2);background:#0d1728;padding:5px 9px;border-radius:999px}
+  .pill.hot{color:#c7d2fe;border-color:#3b4a8a;background:#131d3a}
+  h1{font-size:clamp(30px,4vw,46px);line-height:1.08;letter-spacing:-.025em;margin:0 0 14px;font-weight:800}
+  h1 span{background:linear-gradient(100deg,#a5b4fc,#67e8f9 55%,#6ee7b7);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{font-size:19px;line-height:1.6;color:#c3d0e4;max-width:74ch;margin:0}
+  .meta{display:flex;flex-wrap:wrap;gap:18px;margin-top:22px;color:var(--dim);font-size:12.5px}
+  .meta b{color:var(--muted);font-weight:600}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:26px}
+  .stat{background:linear-gradient(180deg,#101c30,#0b1525);border:1px solid var(--line);border-radius:14px;padding:13px 15px}
+  .stat b{display:block;font:800 22px/1.2 var(--mono);color:#fff;letter-spacing:-.02em}
+  .stat span{display:block;color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.12em;margin-top:5px}
+  section{padding-top:46px;margin-top:14px;border-top:1px solid var(--line)}
+  section:first-of-type{border-top:0}
+  h2{font-size:clamp(22px,2.6vw,29px);letter-spacing:-.02em;margin:0 0 6px;font-weight:750;line-height:1.25}
+  h2 .num{font:700 12px/1 var(--mono);color:var(--indigo);background:#141f3c;border:1px solid #2b3a70;border-radius:6px;padding:5px 7px;vertical-align:3px;margin-right:10px}
+  h3{font-size:17px;margin:32px 0 8px;letter-spacing:-.01em;color:#eef4ff}
+  h4{font-size:13px;text-transform:uppercase;letter-spacing:.11em;color:var(--muted);margin:24px 0 8px}
+  p{margin:0 0 14px;max-width:76ch}
+  ul,ol{margin:0 0 16px;padding-left:22px;max-width:76ch}
+  li{margin:0 0 7px}
+  li::marker{color:var(--dim)}
+  strong{color:#fff;font-weight:650}
+  code{font-family:var(--mono);font-size:.86em;background:#101d33;border:1px solid #1f2e49;padding:1.5px 5px;border-radius:5px;color:#c8d8ef;white-space:nowrap}
+  pre{background:#0a1424;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow:auto;margin:0 0 18px;font:12.8px/1.7 var(--mono);color:#c6d5ea}
+  pre .c{color:#6d829f}
+  pre .k{color:#a5b4fc}
+  pre .v{color:#6ee7b7}
+  /* ---------- Tables ---------- */
+  .tw{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);border-radius:12px;background:#0a1424}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:520px}
+  caption{caption-side:top;text-align:left;color:var(--dim);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;padding:10px 14px 0}
+  th,td{text-align:left;vertical-align:top;padding:10px 14px;border-bottom:1px solid #16233a}
+  th{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#9fb0c8;background:#0d1728;font-weight:700;white-space:nowrap}
+  tr:last-child td{border-bottom:0}
+  td code{white-space:nowrap}
+  .num-r{text-align:right;font-family:var(--mono);font-size:12.5px}
+  /* ---------- Callouts ---------- */
+  .note,.warn,.ok{border:1px solid var(--line-2);border-left:3px solid var(--indigo);background:#0c1729;border-radius:10px;padding:13px 16px;margin:0 0 20px;font-size:14px;color:#c9d6e8;max-width:78ch}
+  .note b,.warn b,.ok b{display:block;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;margin-bottom:5px;color:#a9b9f5}
+  .warn{border-left-color:var(--rose)}
+  .warn b{color:#fda4b0}
+  .ok{border-left-color:var(--emerald)}
+  .ok b{color:#8fe8c0}
+  .note p:last-child,.warn p:last-child,.ok p:last-child{margin:0}
+  /* ---------- Figures ---------- */
+  figure{margin:26px 0 30px;background:linear-gradient(180deg,#0c1627,#0a1322);border:1px solid var(--line);border-radius:16px;padding:14px 14px 0;overflow:hidden}
+  figure svg{display:block;width:100%;height:auto}
+  figcaption{color:var(--dim);font-size:12px;line-height:1.55;padding:12px 4px 14px;border-top:1px solid #16233a;margin-top:10px}
+  figcaption b{color:#b9c8dd;font-weight:650}
+  /* ---------- SVG primitives ---------- */
+  figure svg text{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;fill:#e2e8f0;font-size:13px}
+  figure svg .bt{font-weight:650;font-size:12.5px}
+  figure svg .bs{font-size:10.5px;fill:#93a4bd}
+  figure svg .bd{font-size:10.5px;fill:#7f92ad;letter-spacing:.13em;font-weight:700}
+  figure svg .box{fill:#0f1a2e;stroke:#2b3b57;stroke-width:1.2}
+  figure svg .box-a{fill:#12203a;stroke:#3b4a8a;stroke-width:1.2}
+  figure svg .box-c{fill:#0d2230;stroke:#1f4b5c;stroke-width:1.2}
+  figure svg .band{fill:#0a1322;stroke:#24344d;stroke-width:1.2;stroke-dasharray:6 5}
+  figure svg .ln{stroke:#5b6f8c;stroke-width:1.6;fill:none}
+  figure svg .lnd{stroke:#4a5b74;stroke-width:1.5;fill:none;stroke-dasharray:5 4}
+  figure svg .lbl{font-size:10.5px;fill:#9db0c9}
+  figure svg .lbl-b{font-size:10.5px;fill:#c7d5ea;font-weight:600}
+  .fig-tag{font:700 10px/1 var(--mono);color:var(--dim);letter-spacing:.1em;padding:0 4px 8px}
+  /* ---------- Misc ---------- */
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .card{background:#0c1627;border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .card h4{margin-top:0}
+  .tag{display:inline-block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;padding:3px 7px;border-radius:5px;border:1px solid var(--line-2);color:#a9bad2;background:#0e1a2c;margin:0 6px 6px 0}
+  .tag.hi{color:#fecdd3;border-color:#7f2d3d;background:#2a1017}
+  .tag.mid{color:#fde68a;border-color:#7a5b12;background:#2a2109}
+  .tag.low{color:#a7f3d0;border-color:#1f6b4d;background:#06251b}
+  .toc-note{color:var(--dim);font-size:12px;margin-top:10px}
+  footer{border-top:1px solid var(--line);margin-top:56px;padding-top:22px;color:var(--dim);font-size:12.5px;max-width:78ch}
+  .check li{list-style:none;margin-left:-22px}
+  .check li::before{content:"▸ ";color:var(--indigo)}
+  @media (max-width:1000px){
+    .wrap{grid-template-columns:1fr;gap:0;padding:0 20px}
+    nav.toc{position:static;height:auto;border-bottom:1px solid var(--line);padding:24px 0 10px}
+    nav.toc ol{columns:2;column-gap:22px}
+    nav.toc .side-note{display:none}
+    main{padding-top:26px}
+    .two{grid-template-columns:1fr}
+  }
+  @media (max-width:560px){
+    nav.toc ol{columns:1}
+    .stat-grid{grid-template-columns:1fr 1fr}
+    body{font-size:15px}
+  }
+  @media print{
+    body{background:#fff;color:#111}
+    .wrap{display:block;max-width:none;padding:0}
+    nav.toc{display:none}
+    main{max-width:none}
+    section{page-break-inside:avoid}
+    figure{background:#fff;border-color:#bbb}
+    p,li{color:#111}
+    a{color:#111}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc" aria-label="Contents">
+  <div class="brand"><i></i> SkyMetropolis</div>
+  <p class="sub">Repository guide</p>
+  <ol>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#facts">Key facts</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#tick">Tick sequence</a></li>
+    <li><a href="#commands">Player actions</a></li>
+    <li><a href="#simulation">Simulation rules</a></li>
+    <li><a href="#utilities">Utility network</a></li>
+    <li><a href="#ai">AI advisor</a></li>
+    <li><a href="#interface">Interface and visuals</a></li>
+    <li><a href="#build">Build and run</a></li>
+    <li><a href="#map">Repository map</a></li>
+    <li><a href="#limits">Limits and gaps</a></li>
+    <li><a href="#ste">STE writing rules</a></li>
+    <li><a href="#glossary">Glossary</a></li>
+  </ol>
+  <div class="side-note">
+    Revision <b>cf8c917</b><br>
+    68 TypeScript files<br>
+    9,325 lines of code<br>
+    No automated tests
+  </div>
+</nav>
+
+<main>
+
+<header class="hero">
+  <div class="kicker">
+    <span class="pill hot">ASD-STE100 · writing rules</span>
+    <span class="pill">Technical reference</span>
+    <span class="pill">8 diagrams</span>
+    <span class="pill">Revision cf8c917</span>
+  </div>
+  <h1>SkyMetropolis<br><span>Repository Guide</span></h1>
+  <p class="lede">This document tells you how the code in this repository works. It gives the system structure, the data flow, the simulation rules, and the known limits. It uses the writing rules of ASD-STE100 Simplified Technical English. It shows a diagram where a diagram gives a clearer answer than text.</p>
+  <div class="meta">
+    <span><b>Repository</b> Mankeluvsit/3d-iso</span>
+    <span><b>Date</b> 18 November 2026</span>
+    <span><b>Stack</b> React 19 · three r173 · Express 4</span>
+    <span><b>Language</b> TypeScript</span>
+  </div>
+  <div class="stat-grid">
+    <div class="stat"><b>15 × 15</b><span>Tile grid</span></div>
+    <div class="stat"><b>2 s</b><span>Tick interval</span></div>
+    <div class="stat"><b>5</b><span>Ticks per day</span></div>
+    <div class="stat"><b>6</b><span>Building types</span></div>
+    <div class="stat"><b>3</b><span>Policies</span></div>
+    <div class="stat"><b>0</b><span>Tests</span></div>
+  </div>
+</header>
+
+<!-- ============================================================ -->
+<section id="overview">
+  <h2><span class="num">01</span>Overview</h2>
+
+  <p>SkyMetropolis is a small city-building game. It runs in a web browser. The player builds a city on a grid of 15 by 15 tiles. A simulation runs in a Web Worker. An AI advisor gives goals and news to the player. A Node server holds the AI key and calls the AI service.</p>
+
+  <p>The code uses three different product names. <code>package.json</code> uses “sky-metropolis”. <code>index.html</code> uses “PolyCity AI 3D”. The interface text uses “SkyMetropolis”. Treat these three names as one product.</p>
+
+  <h3>What the player does</h3>
+  <ol>
+    <li>Select a game mode on the start screen. The two modes are AI mayor and sandbox.</li>
+    <li>Select a building tool in the bottom bar.</li>
+    <li>Click a tile. The tile receives the selected building.</li>
+    <li>Read the treasury and the population in the top bar.</li>
+    <li>Fulfil the goal of the AI advisor. Collect the reward.</li>
+  </ol>
+
+  <h3>What this document covers</h3>
+  <p>This document describes the source code at revision <code>cf8c917</code>. It covers the application layers, the simulation loop, the command system, the game rules, the AI path, the interface, and the build steps. It also records the differences between the code and the labels in the interface.</p>
+
+  <div class="note">
+    <b>Scope</b>
+    <p>This is not a player manual. It does not describe how to play well. It describes how the program is built and where the behaviour comes from. All statements about runtime behaviour come from a reading of the source. The application was not started for this document.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="facts">
+  <h2><span class="num">02</span>Key facts</h2>
+
+  <div class="tw">
+    <table>
+      <caption>Table 1 — Values that control the game</caption>
+      <thead><tr><th>Item</th><th>Value</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>Grid size</td><td>15 × 15 tiles (225 tiles)</td><td><code>constants.tsx</code></td></tr>
+        <tr><td>Tick interval</td><td>2000 ms</td><td><code>simulation.worker.ts</code></td></tr>
+        <tr><td>Ticks per day</td><td>5</td><td><code>GameKernel.ts</code></td></tr>
+        <tr><td>Days per month</td><td>30</td><td><code>GameTimeService.ts</code></td></tr>
+        <tr><td>Starting money</td><td>1000 in the engine; 1500 in AI mode; 50000 in sandbox mode</td><td><code>ResourceRegistry.ts</code>, <code>StartScreen/index.tsx</code></td></tr>
+        <tr><td>Building types</td><td>Road, House, Shop, Factory, Park, Bridge; plus Bulldoze</td><td><code>types.ts</code></td></tr>
+        <tr><td>Policies</td><td>Clean Energy, Tax Incentives, Corporate Surcharge</td><td><code>config/policies.json</code></td></tr>
+        <tr><td>Renderer</td><td>React 19, three 0.173, @react-three/fiber 9, drei 10</td><td><code>package.json</code></td></tr>
+        <tr><td>Client state</td><td>zustand 5 store</td><td><code>src/store/gameStore.ts</code></td></tr>
+        <tr><td>Server</td><td>Express 4 with Vite middleware on port 3000</td><td><code>server.ts</code></td></tr>
+        <tr><td>AI service</td><td>Google Gen AI SDK, model <code>gemini-3.5-flash</code></td><td><code>server.ts</code></td></tr>
+        <tr><td>Build tools</td><td>Vite 6 and esbuild 0.21</td><td><code>package.json</code></td></tr>
+        <tr><td>Automated tests</td><td>None</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Dependencies</h3>
+  <p>The project has ten runtime dependencies. <code>react</code> and <code>react-dom</code> draw the interface. <code>three</code>, <code>@react-three/fiber</code>, and <code>@react-three/drei</code> draw the 3D city. <code>zustand</code> holds the client state. <code>motion</code> animates the start screen and the handbook. <code>lucide-react</code> supplies the icons. <code>express</code> serves the files. <code>@google/genai</code> calls the model.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="architecture">
+  <h2><span class="num">03</span>Architecture</h2>
+
+  <p>The program has three runtime zones. Each zone has one job:</p>
+  <ul>
+    <li>The <strong>main thread</strong> draws the interface and the 3D scene. It also takes the mouse input.</li>
+    <li>The <strong>Web Worker</strong> runs the simulation. It holds the authority for the game state.</li>
+    <li>The <strong>Node server</strong> serves the files and calls the AI service. It keeps the API key away from the browser.</li>
+  </ul>
+
+  <figure>
+    <div class="fig-tag">FIGURE 1 — RUNTIME ZONES</div>
+    <svg viewBox="0 0 1000 580" role="img" aria-label="Block diagram with three zones: browser main thread, Web Worker, and Node server with the Gemini API.">
+      <defs>
+        <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#5b6f8c"></path>
+        </marker>
+        <marker id="a1d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#4a5b74"></path>
+        </marker>
+      </defs>
+
+      <rect class="band" x="20" y="20" width="960" height="220" rx="14"></rect>
+      <text class="bd" x="40" y="46">BROWSER · MAIN THREAD</text>
+      <text class="bs" x="812" y="46">React 19 · three r173</text>
+
+      <rect class="box" x="48" y="64" width="230" height="54" rx="10"></rect>
+      <text class="bt" x="163" y="88" text-anchor="middle">StartScreen</text>
+      <text class="bs" x="163" y="105" text-anchor="middle">mode, cash, climate preset</text>
+
+      <rect class="box" x="306" y="64" width="230" height="54" rx="10"></rect>
+      <text class="bt" x="421" y="88" text-anchor="middle">UIOverlay</text>
+      <text class="bs" x="421" y="105" text-anchor="middle">stats, toolbar, news, deck</text>
+
+      <rect class="box" x="564" y="64" width="230" height="54" rx="10"></rect>
+      <text class="bt" x="679" y="88" text-anchor="middle">IsoMap</text>
+      <text class="bs" x="679" y="105" text-anchor="middle">WebGL city and effects</text>
+
+      <rect class="box" x="48" y="150" width="230" height="60" rx="10"></rect>
+      <text class="bt" x="163" y="174" text-anchor="middle">useGameSimulation</text>
+      <text class="bs" x="163" y="191" text-anchor="middle">worker bridge and actions</text>
+
+      <rect class="box-a" x="306" y="150" width="230" height="60" rx="10"></rect>
+      <text class="bt" x="421" y="174" text-anchor="middle">zustand store</text>
+      <text class="bs" x="421" y="191" text-anchor="middle">client copy of the state</text>
+
+      <rect class="box" x="564" y="150" width="230" height="60" rx="10"></rect>
+      <text class="bt" x="679" y="174" text-anchor="middle">SimulationWorkerManager</text>
+      <text class="bs" x="679" y="191" text-anchor="middle">messages and fallback</text>
+
+      <path class="ln" d="M278,180 H306" marker-end="url(#a1)"></path>
+      <path class="ln" d="M564,180 H536" marker-end="url(#a1)"></path>
+      <path class="lnd" d="M421,150 V118" marker-end="url(#a1d)"></path>
+      <path class="lnd" d="M500,150 V140 H679 V118" marker-end="url(#a1d)"></path>
+
+      <text class="lbl" x="48" y="266">postMessage: INIT, EXEC_COMMAND, UNDO, REDO, CLAIM_AWARD</text>
+      <text class="lbl" x="48" y="284">STATE_SYNC returns one full snapshot</text>
+      <path class="ln" d="M620,240 V300" marker-end="url(#a1)"></path>
+      <path class="lnd" d="M660,300 V240" marker-end="url(#a1d)"></path>
+
+      <rect class="band" x="540" y="300" width="440" height="165" rx="14"></rect>
+      <text class="bd" x="560" y="324">WEB WORKER</text>
+
+      <rect class="box-a" x="560" y="346" width="200" height="58" rx="10"></rect>
+      <text class="bt" x="660" y="370" text-anchor="middle">GameKernel</text>
+      <text class="bs" x="660" y="388" text-anchor="middle">state authority and loop</text>
+
+      <rect class="box" x="780" y="346" width="180" height="58" rx="10"></rect>
+      <text class="bt" x="870" y="370" text-anchor="middle">simulation.worker</text>
+      <text class="bs" x="870" y="388" text-anchor="middle">message switch</text>
+
+      <path class="ln" d="M780,375 H762" marker-end="url(#a1)"></path>
+
+      <rect class="band" x="20" y="300" width="480" height="165" rx="14"></rect>
+      <text class="bd" x="40" y="324">EXPRESS SERVER · NODE</text>
+
+      <rect class="box" x="40" y="346" width="210" height="50" rx="10"></rect>
+      <text class="bt" x="145" y="368" text-anchor="middle">/api/gemini/goal</text>
+      <text class="bs" x="145" y="384" text-anchor="middle">stats and grid in, goal out</text>
+
+      <rect class="box" x="266" y="346" width="214" height="50" rx="10"></rect>
+      <text class="bt" x="373" y="368" text-anchor="middle">/api/gemini/news</text>
+      <text class="bs" x="373" y="384" text-anchor="middle">headline out</text>
+
+      <rect class="box" x="40" y="412" width="440" height="40" rx="10"></rect>
+      <text class="bs" x="260" y="437" text-anchor="middle">Vite middleware in development · static files in production</text>
+
+      <path class="ln" d="M558,375 H502" marker-end="url(#a1)"></path>
+      <text class="lbl" x="530" y="366" text-anchor="middle">fetch()</text>
+
+      <rect class="box-c" x="20" y="500" width="480" height="52" rx="10"></rect>
+      <text class="bt" x="260" y="524" text-anchor="middle">Google Gemini API</text>
+      <text class="bs" x="260" y="541" text-anchor="middle">model gemini-3.5-flash · JSON schema output</text>
+      <path class="ln" d="M260,465 V500" marker-end="url(#a1)"></path>
+      <text class="lbl" x="272" y="487">JSON</text>
+
+      <text class="lbl" x="24" y="572">Solid line: request. Dashed line: data return.</text>
+    </svg>
+    <figcaption><b>Figure 1 — Runtime zones.</b> The main thread never changes the game state. It sends commands and receives snapshots. The worker owns the kernel. The kernel calls the server through a relative URL, and the server adds the API key.</figcaption>
+  </figure>
+
+  <h3>Layers</h3>
+  <div class="tw">
+    <table>
+      <caption>Table 2 — Source layers</caption>
+      <thead><tr><th>Layer</th><th>Files</th><th>Job</th></tr></thead>
+      <tbody>
+        <tr><td>Presentation</td><td><code>App.tsx</code>, <code>components/StartScreen</code>, <code>components/UIOverlay</code>, <code>components/IsoMap</code></td><td>Draw pixels. Take mouse input.</td></tr>
+        <tr><td>Application</td><td><code>src/hooks/useGameSimulation.ts</code>, <code>src/store/gameStore.ts</code>, <code>src/workers</code></td><td>Bridge the interface and the worker. Hold the client copy of the state.</td></tr>
+        <tr><td>Domain</td><td><code>src/kernel/GameKernel.ts</code>, <code>src/simulation</code>, <code>src/ecs</code></td><td>Own the rules, the entities, and the resources.</td></tr>
+        <tr><td>Core services</td><td><code>src/kernel/core</code></td><td>Give time, rules, routing, storage, and diagnosis to the domain.</td></tr>
+        <tr><td>Platform</td><td><code>server.ts</code>, <code>src/ai</code>, <code>src/config</code></td><td>Serve files, call the model, hold data files.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>One object holds the authority for the game state: the <strong>GameKernel</strong>. The worker creates one kernel. The kernel owns the grid, the resources, the entities, and the simulation engines. The interface never writes to the kernel. It sends a command. The kernel applies the command and returns a snapshot.</p>
+
+  <p>The kernel also owns nineteen core services. It creates each service in the constructor. It registers each service in a global container. It also gives a getter for each service. Most callers use the getters. Only the container uses the names.</p>
+
+  <figure>
+    <div class="fig-tag">FIGURE 2 — KERNEL SERVICE MAP</div>
+    <svg viewBox="0 0 1000 520" role="img" aria-label="Diagram of the GameKernel with four engine boxes above, four service groups below, and the ECS and snapshot at the sides.">
+      <defs>
+        <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#5b6f8c"></path>
+        </marker>
+      </defs>
+
+      <rect class="band" x="20" y="20" width="960" height="116" rx="14"></rect>
+      <text class="bd" x="40" y="44">SIMULATION ENGINES · SCHEDULED</text>
+
+      <rect class="box" x="40" y="50" width="172" height="58" rx="10"></rect>
+      <text class="bt" x="126" y="73" text-anchor="middle">EconomyEngine</text>
+      <text class="bs" x="126" y="91" text-anchor="middle">income and expense</text>
+
+      <rect class="box" x="228" y="50" width="172" height="58" rx="10"></rect>
+      <text class="bt" x="314" y="73" text-anchor="middle">PopulationEngine</text>
+      <text class="bs" x="314" y="91" text-anchor="middle">citizens and jobs</text>
+
+      <rect class="box" x="416" y="50" width="172" height="58" rx="10"></rect>
+      <text class="bt" x="502" y="73" text-anchor="middle">TrafficEngine</text>
+      <text class="bs" x="502" y="91" text-anchor="middle">vehicles and load</text>
+
+      <rect class="box" x="604" y="50" width="172" height="58" rx="10"></rect>
+      <text class="bt" x="690" y="73" text-anchor="middle">EventEngine</text>
+      <text class="bs" x="690" y="91" text-anchor="middle">random news</text>
+
+      <rect class="box" x="792" y="50" width="168" height="58" rx="10"></rect>
+      <text class="bt" x="876" y="73" text-anchor="middle">ResourceNetwork</text>
+      <text class="bs" x="876" y="91" text-anchor="middle">utility solver</text>
+
+      <path class="ln" d="M500,176 V136" marker-end="url(#a2)"></path>
+      <text class="lbl" x="512" y="162">scheduler.tick()</text>
+
+      <rect class="box-a" x="350" y="176" width="300" height="66" rx="12"></rect>
+      <text class="bt" x="500" y="203" text-anchor="middle">GameKernel</text>
+      <text class="bs" x="500" y="222" text-anchor="middle">facade · authority · tick loop</text>
+
+      <rect class="box" x="30" y="176" width="230" height="66" rx="12"></rect>
+      <text class="bt" x="145" y="203" text-anchor="middle">ECSManager</text>
+      <text class="bs" x="145" y="222" text-anchor="middle">entities and components</text>
+      <path class="ln" d="M260,209 H350" marker-end="url(#a2)"></path>
+
+      <rect class="box" x="740" y="176" width="230" height="66" rx="12"></rect>
+      <text class="bt" x="855" y="203" text-anchor="middle">Snapshot</text>
+      <text class="bs" x="855" y="222" text-anchor="middle">serializable state</text>
+      <path class="ln" d="M650,209 H740" marker-end="url(#a2)"></path>
+
+      <path class="ln" d="M500,242 V270"></path>
+      <path class="ln" d="M110,270 H890"></path>
+      <path class="ln" d="M132,270 V300" marker-end="url(#a2)"></path>
+      <path class="ln" d="M375,270 V300" marker-end="url(#a2)"></path>
+      <path class="ln" d="M618,270 V300" marker-end="url(#a2)"></path>
+      <path class="ln" d="M864,270 V300" marker-end="url(#a2)"></path>
+      <text class="lbl" x="22" y="290">DI container</text>
+
+      <rect class="box" x="20" y="300" width="225" height="170" rx="12"></rect>
+      <text class="bt" x="36" y="326">Time and input</text>
+      <text class="bs" x="36" y="352">GameTimeService</text>
+      <text class="bs" x="36" y="370">SeededRandomService</text>
+      <text class="bs" x="36" y="388">SimulationScheduler</text>
+      <text class="bs" x="36" y="406">HeadlessSimulationEngine</text>
+
+      <rect class="box" x="263" y="300" width="225" height="170" rx="12"></rect>
+      <text class="bt" x="279" y="326">Data and rules</text>
+      <text class="bs" x="279" y="352">ResourceRegistry</text>
+      <text class="bs" x="279" y="370">RuleEngine</text>
+      <text class="bs" x="279" y="388">ModifierFramework</text>
+      <text class="bs" x="279" y="406">ContentRegistry</text>
+      <text class="bs" x="279" y="424">ValidationPipeline</text>
+
+      <rect class="box" x="506" y="300" width="225" height="170" rx="12"></rect>
+      <text class="bt" x="522" y="326">Space and labels</text>
+      <text class="bs" x="522" y="352">PathfindingService</text>
+      <text class="bs" x="522" y="370">SpatialPartitioning</text>
+      <text class="bs" x="522" y="388">TagSystem</text>
+      <text class="bs" x="522" y="406">WorldStateRegistry</text>
+
+      <rect class="box" x="749" y="300" width="231" height="170" rx="12"></rect>
+      <text class="bt" x="765" y="326">Operations</text>
+      <text class="bs" x="765" y="352">TelemetryService</text>
+      <text class="bs" x="765" y="370">FeatureFlagService</text>
+      <text class="bs" x="765" y="388">DomainEventHistorySystem</text>
+      <text class="bs" x="765" y="406">SaveMigrationFramework</text>
+      <text class="bs" x="765" y="424">DeterministicReplayFramework</text>
+      <text class="bs" x="765" y="442">AssetStreamingSystem</text>
+
+      <text class="lbl" x="22" y="500">Each service is created in the kernel constructor and registered in the global container.</text>
+    </svg>
+    <figcaption><b>Figure 2 — Kernel service map.</b> The kernel is a facade. It gives one address for the state and the services. The engines change the state. The core services give time, rules, routing, storage, and diagnosis.</figcaption>
+  </figure>
+
+  <div class="note">
+    <b>Design pattern</b>
+    <p>The kernel copies the read model into the <code>WorldStateRegistry</code> at the end of each tick. This is a command-query separation (CQRS) pattern. The registry clones the data before it stores the data. A reader cannot change the state of the engine.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="tick">
+  <h2><span class="num">04</span>Tick sequence</h2>
+
+  <p>One tick is the smallest step of the simulation. The worker starts a timer with an interval of 2000 ms. On each interval, the worker calls <code>GameKernel.tick()</code>. The kernel then runs eight steps in a fixed order.</p>
+
+  <div class="tw">
+    <table>
+      <caption>Table 3 — The eight steps of one tick</caption>
+      <thead><tr><th>Step</th><th>Action</th><th>Code</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td class="num-r">1</td><td>Advance the clock</td><td><code>clock.tick()</code></td><td>The tick count increases by one. A paused clock stops the tick here.</td></tr>
+        <tr><td class="num-r">2</td><td>Solve the utility graph</td><td><code>solveResourcesAndInfrastructure()</code></td><td>Each building becomes a node. Five resources move from producers to consumers.</td></tr>
+        <tr><td class="num-r">3</td><td>Run the engines</td><td><code>scheduler.tick()</code></td><td>Economy, population, traffic, and events update by priority and interval.</td></tr>
+        <tr><td class="num-r">4</td><td>Update modifiers</td><td><code>modifiers.update()</code></td><td>Timed modifiers lose one tick. Expired modifiers are removed.</td></tr>
+        <tr><td class="num-r">5</td><td>Evaluate rules</td><td><code>ruleEngine.evaluate()</code></td><td>A true condition applies its effects. The milestone rule pays $5000 at 100 people.</td></tr>
+        <tr><td class="num-r">6</td><td>Evaluate the scenario</td><td><code>scenarioFramework.evaluateStatus()</code></td><td>Matching scenario goals become complete. No scenario is active by default.</td></tr>
+        <tr><td class="num-r">7</td><td>Test the AI goal</td><td><code>checkAIGoals()</code></td><td>A met goal gets the complete mark. The reward waits for the player.</td></tr>
+        <tr><td class="num-r">8</td><td>Commit the snapshot</td><td><code>captureSnapshot()</code></td><td>The read model receives a clone. The bus emits <code>tick</code>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure>
+    <div class="fig-tag">FIGURE 3 — TICK PIPELINE</div>
+    <svg viewBox="0 0 1000 330" role="img" aria-label="Eight numbered boxes in two rows. The flow goes left to right on the first row and right to left on the second row.">
+      <defs>
+        <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#5b6f8c"></path>
+        </marker>
+      </defs>
+
+      <rect class="box" x="30" y="40" width="220" height="92" rx="12"></rect>
+      <circle cx="54" cy="64" r="12" fill="#16234a" stroke="#3b4a8a"></circle>
+      <text class="bt" x="54" y="69" text-anchor="middle" fill="#c7d2fe">1</text>
+      <text class="bt" x="76" y="69">Clock</text>
+      <text class="bs" x="46" y="96">Advance the tick counter.</text>
+      <text class="bs" x="46" y="114">Stop if the game is paused.</text>
+
+      <rect class="box" x="260" y="40" width="220" height="92" rx="12"></rect>
+      <circle cx="284" cy="64" r="12" fill="#16234a" stroke="#3b4a8a"></circle>
+      <text class="bt" x="284" y="69" text-anchor="middle" fill="#c7d2fe">2</text>
+      <text class="bt" x="306" y="69">Networks</text>
+      <text class="bs" x="276" y="96">Rebuild the utility graph.</text>
+      <text class="bs" x="276" y="114">Solve five resources by BFS.</text>
+
+      <rect class="box" x="490" y="40" width="220" height="92" rx="12"></rect>
+      <circle cx="514" cy="64" r="12" fill="#16234a" stroke="#3b4a8a"></circle>
+      <text class="bt" x="514" y="69" text-anchor="middle" fill="#c7d2fe">3</text>
+      <text class="bt" x="536" y="69">Engines</text>
+      <text class="bs" x="506" y="96">Run systems by priority.</text>
+      <text class="bs" x="506" y="114">Respect the tick interval.</text>
+
+      <rect class="box" x="720" y="40" width="220" height="92" rx="12"></rect>
+      <circle cx="744" cy="64" r="12" fill="#16234a" stroke="#3b4a8a"></circle>
+      <text class="bt" x="744" y="69" text-anchor="middle" fill="#c7d2fe">4</text>
+      <text class="bt" x="766" y="69">Modifiers</text>
+      <text class="bs" x="736" y="96">Decrease timed modifiers.</text>
+      <text class="bs" x="736" y="114">Remove expired entries.</text>
+
+      <path class="ln" d="M250,86 H260" marker-end="url(#a3)"></path>
+      <path class="ln" d="M480,86 H490" marker-end="url(#a3)"></path>
+      <path class="ln" d="M710,86 H720" marker-end="url(#a3)"></path>
+      <path class="ln" d="M830,132 V190" marker-end="url(#a3)"></path>
+
+      <rect class="box" x="720" y="190" width="220" height="92" rx="12"></rect>
+      <circle cx="744" cy="214" r="12" fill="#16234a" stroke="#3b4a8a"></circle>
+      <text class="bt" x="744" y="219" text-anchor="middle" fill="#c7d2fe">5</text>
+      <text class="bt" x="766" y="219">Rules</text>
+      <text class="bs" x="736" y="246">Test rule conditions.</text>
+      <text class="bs" x="736" y="264">Apply all matching effects.</text>
+
+      <rect class="box" x="490" y="190" width="220" height="92" rx="12"></rect>
+      <circle cx="514" cy="214" r="12" fill="#16234a" stroke="#3b4a8a"></circle>
+      <text class="bt" x="514" y="219" text-anchor="middle" fill="#c7d2fe">6</text>
+      <text class="bt" x="536" y="219">Scenarios</text>
+      <text class="bs" x="506" y="246">Test scenario goals.</text>
+      <text class="bs" x="506" y="264">Mark completed goals.</text>
+
+      <rect class="box" x="260" y="190" width="220" height="92" rx="12"></rect>
+      <circle cx="284" cy="214" r="12" fill="#16234a" stroke="#3b4a8a"></circle>
+      <text class="bt" x="284" y="219" text-anchor="middle" fill="#c7d2fe">7</text>
+      <text class="bt" x="306" y="219">AI goal</text>
+      <text class="bs" x="276" y="246">Compare target and stats.</text>
+      <text class="bs" x="276" y="264">Mark the goal complete.</text>
+
+      <rect class="box" x="30" y="190" width="220" height="92" rx="12"></rect>
+      <circle cx="54" cy="214" r="12" fill="#16234a" stroke="#3b4a8a"></circle>
+      <text class="bt" x="54" y="219" text-anchor="middle" fill="#c7d2fe">8</text>
+      <text class="bt" x="76" y="219">Snapshot</text>
+      <text class="bs" x="46" y="246">Clone into the read model.</text>
+      <text class="bs" x="46" y="264">Emit the tick event.</text>
+
+      <path class="ln" d="M720,236 H710" marker-end="url(#a3)"></path>
+      <path class="ln" d="M490,236 H480" marker-end="url(#a3)"></path>
+      <path class="ln" d="M260,236 H250" marker-end="url(#a3)"></path>
+
+      <text class="lbl" x="30" y="310">Steps 1 to 8 run in one tick. Step 8 is the only step that sends data to the interface.</text>
+    </svg>
+    <figcaption><b>Figure 3 — Tick pipeline.</b> The order is not arbitrary. The utility solve comes before the engines, because the population and the economy read the supply state. The rules come after the engines, because a rule tests a balance that the engines have changed.</figcaption>
+  </figure>
+
+  <h3>Scheduler priority and interval</h3>
+  <div class="tw">
+    <table>
+      <caption>Table 4 — Engine schedule</caption>
+      <thead><tr><th>Engine</th><th>Priority</th><th>Interval</th><th>Gate flag</th></tr></thead>
+      <tbody>
+        <tr><td>EconomyEngine</td><td class="num-r">10</td><td class="num-r">1 tick</td><td><code>economy_taxes</code> (true)</td></tr>
+        <tr><td>PopulationEngine</td><td class="num-r">20</td><td class="num-r">1 tick</td><td>None</td></tr>
+        <tr><td>TrafficEngine</td><td class="num-r">30</td><td class="num-r">2 ticks</td><td><code>advanced_traffic_pathing</code> (true)</td></tr>
+        <tr><td>EventEngine</td><td class="num-r">40</td><td class="num-r">5 ticks</td><td><code>simulation_disasters</code> (false)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>A low priority number runs first. The traffic system runs on each second tick. The event system runs on each fifth tick. The event system does not run at all in the default build, because its flag is false and no code changes the flag.</p>
+
+  <div class="warn">
+    <b>Caution</b>
+    <p>The <code>setFlag</code> method exists, but no caller uses it. The seven default flags are fixed at start. To test the event system, you must change the default value in <code>src/kernel/core/FeatureFlag.ts</code>.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="commands">
+  <h2><span class="num">05</span>Player actions and commands</h2>
+
+  <p>Player input becomes a command object. The command pattern gives three properties at the same time: validation, undo, and a serial form for replay.</p>
+
+  <div class="tw">
+    <table>
+      <caption>Table 5 — Command classes</caption>
+      <thead><tr><th>Class</th><th>Input</th><th>Effect</th><th>Cost</th></tr></thead>
+      <tbody>
+        <tr><td><code>BuildCommand</code></td><td>Tile x and y, building type</td><td>Writes the tile, subtracts the cost, creates an ECS entity, solves the networks</td><td>Cost of the building</td></tr>
+        <tr><td><code>DemolishCommand</code></td><td>Tile x and y</td><td>Clears the tile, destroys the entity</td><td>5</td></tr>
+        <tr><td><code>PolicyToggleCommand</code></td><td>Policy id</td><td>Inverts the policy flag and emits <code>policy_changed</code></td><td>0</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Each command has three methods: <code>execute</code>, <code>undo</code>, and <code>serialize</code>. The <code>CommandManager</code> keeps an undo stack and a redo stack. A new command clears the redo stack.</p>
+
+  <figure>
+    <div class="fig-tag">FIGURE 4 — COMMAND AND SNAPSHOT ROUND TRIP</div>
+    <svg viewBox="0 0 1000 330" role="img" aria-label="Two rows of boxes. The top row shows a click becoming a command. The bottom row shows the snapshot returning to the interface.">
+      <defs>
+        <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#5b6f8c"></path>
+        </marker>
+        <marker id="a4d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#4a5b74"></path>
+        </marker>
+      </defs>
+
+      <rect class="box" x="30" y="44" width="150" height="56" rx="10"></rect>
+      <text class="bt" x="105" y="68" text-anchor="middle">Tile click</text>
+      <text class="bs" x="105" y="85" text-anchor="middle">x, y, tool</text>
+
+      <rect class="box" x="210" y="44" width="180" height="56" rx="10"></rect>
+      <text class="bt" x="300" y="68" text-anchor="middle">useGameSimulation</text>
+      <text class="bs" x="300" y="85" text-anchor="middle">handleTileClick</text>
+
+      <rect class="box" x="420" y="44" width="190" height="56" rx="10"></rect>
+      <text class="bt" x="515" y="68" text-anchor="middle">postMessage</text>
+      <text class="bs" x="515" y="85" text-anchor="middle">EXEC_COMMAND</text>
+
+      <rect class="box" x="640" y="44" width="160" height="56" rx="10"></rect>
+      <text class="bt" x="720" y="68" text-anchor="middle">CommandManager</text>
+      <text class="bs" x="720" y="85" text-anchor="middle">execute</text>
+
+      <rect class="box" x="830" y="44" width="140" height="56" rx="10"></rect>
+      <text class="bt" x="900" y="68" text-anchor="middle">Grid and ECS</text>
+      <text class="bs" x="900" y="85" text-anchor="middle">new state</text>
+
+      <path class="ln" d="M180,72 H210" marker-end="url(#a4)"></path>
+      <path class="ln" d="M390,72 H420" marker-end="url(#a4)"></path>
+      <path class="ln" d="M610,72 H640" marker-end="url(#a4)"></path>
+      <path class="ln" d="M800,72 H830" marker-end="url(#a4)"></path>
+
+      <rect class="box" x="30" y="180" width="150" height="56" rx="10"></rect>
+      <text class="bt" x="105" y="204" text-anchor="middle">React render</text>
+      <text class="bs" x="105" y="221" text-anchor="middle">new values</text>
+
+      <rect class="box" x="210" y="180" width="180" height="56" rx="10"></rect>
+      <text class="bt" x="300" y="204" text-anchor="middle">zustand store</text>
+      <text class="bs" x="300" y="221" text-anchor="middle">syncWithSnapshot</text>
+
+      <rect class="box" x="420" y="180" width="190" height="56" rx="10"></rect>
+      <text class="bt" x="515" y="204" text-anchor="middle">STATE_SYNC</text>
+      <text class="bs" x="515" y="221" text-anchor="middle">from the worker</text>
+
+      <rect class="box" x="640" y="180" width="160" height="56" rx="10"></rect>
+      <text class="bt" x="720" y="204" text-anchor="middle">captureSnapshot</text>
+      <text class="bs" x="720" y="221" text-anchor="middle">deep copy</text>
+
+      <path class="lnd" d="M900,100 V208 H802" marker-end="url(#a4d)"></path>
+      <path class="lnd" d="M640,208 H612" marker-end="url(#a4d)"></path>
+      <path class="lnd" d="M420,208 H392" marker-end="url(#a4d)"></path>
+      <path class="lnd" d="M210,208 H182" marker-end="url(#a4d)"></path>
+
+      <text class="lbl" x="30" y="286">Solid line: the forward path in the worker. Dashed line: the return path to the interface.</text>
+      <text class="lbl" x="30" y="306">A command returns true or false. A failed command does not enter the undo stack.</text>
+    </svg>
+    <figcaption><b>Figure 4 — Command round trip.</b> The interface sends a command and waits. The worker applies the command, takes a snapshot, and sends the snapshot back. No component reads the kernel directly.</figcaption>
+  </figure>
+
+  <h3>Undo and redo</h3>
+  <p>The <code>CommandManager</code> has three lists: an undo stack, a redo stack, and a full history. <code>execute</code> pushes the command to the undo stack and the history. <code>undo</code> pops the command and calls its <code>undo</code> method. A successful undo pushes the command to the redo stack. <code>redo</code> runs <code>execute</code> again.</p>
+
+  <p>A <code>BuildCommand</code> keeps the previous tile type. Its <code>undo</code> puts the old type back and returns the cost to the treasury. A <code>DemolishCommand</code> does the opposite. A <code>PolicyToggleCommand</code> only inverts a flag, so its undo is the same operation as its execute.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="simulation">
+  <h2><span class="num">06</span>Simulation rules</h2>
+
+  <p>This section gives the formulas as the code implements them. It also gives the differences between the formulas and the labels in the interface.</p>
+
+  <h3>Economy</h3>
+  <p>The economy engine reads the building list from the ECS. It adds the income of each building. It multiplies the income of shops and factories by the policy multipliers. It subtracts the cost of each active policy. It writes the result to the treasury.</p>
+  <pre><span class="c">// src/simulation/economy/EconomyEngine.ts</span>
+income  = <span class="k">sum</span>(incomeGen × policy multiplier)
+expense = <span class="k">sum</span>(costPerDay of each active policy)
+money   = money + income − expense</pre>
+
+  <div class="warn">
+    <b>Caution</b>
+    <p>The engine runs this calculation on <em>every tick</em>. The building descriptions say “per day”. One day is five ticks. The real income is therefore five times the value in the table.</p>
+  </div>
+
+  <h3>Population and happiness</h3>
+  <pre><span class="c">// src/simulation/population/PopulationEngine.ts</span>
+capacity   = houses × 50
+growth     = ceil(houses × 1.5 × growth multiplier)
+no houses: growth = −5
+population = clamp(population + growth, 0, capacity)
+citizens   = min(population / 2, 100)   <span class="c">// ECS entities</span></pre>
+
+  <p>A citizen entity has a job or no job. A shop gives 5 jobs. A factory gives 15 jobs. A citizen with a job has work factor 90. A citizen without a job has work factor 40. The environment factor starts at 70 and each policy changes it. Happiness is the average of the two factors.</p>
+
+  <div class="note">
+    <b>Note</b>
+    <p>The building file contains a <code>popGen</code> value of 5 for a house. The population engine does not read this value. It uses the growth formula above.</p>
+  </div>
+
+  <h3>Traffic</h3>
+  <pre>vehicles    = min(floor(roads / 2), 30)
+congestion  = min(100, round(vehicles / roads × 100))</pre>
+
+  <p>A vehicle moves to a random adjacent road when it reaches its target. If no neighbour exists, it jumps to a random road. The traffic value in the top bar comes from this calculation.</p>
+
+  <h3>Buildings</h3>
+  <div class="tw">
+    <table>
+      <caption>Table 6 — Building values</caption>
+      <thead><tr><th>Tool</th><th class="num-r">Cost</th><th class="num-r">Income</th><th class="num-r">Jobs</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td>Bulldoze</td><td class="num-r">0</td><td class="num-r">—</td><td class="num-r">—</td><td>Removes a building. Costs 5.</td></tr>
+        <tr><td>Road</td><td class="num-r">10</td><td class="num-r">0</td><td class="num-r">0</td><td>Carries vehicles. Not part of the utility graph.</td></tr>
+        <tr><td>House</td><td class="num-r">100</td><td class="num-r">0</td><td class="num-r">0</td><td>Home for 50 people. Consumes all five utilities.</td></tr>
+        <tr><td>Shop</td><td class="num-r">200</td><td class="num-r">15</td><td class="num-r">5</td><td>Consumes all five utilities.</td></tr>
+        <tr><td>Factory</td><td class="num-r">400</td><td class="num-r">40</td><td class="num-r">15</td><td>The only producer of utility capacity.</td></tr>
+        <tr><td>Park</td><td class="num-r">50</td><td class="num-r">0</td><td class="num-r">0</td><td>Creates a node. Asks for no utility.</td></tr>
+        <tr><td>Bridge</td><td class="num-r">30</td><td class="num-r">0</td><td class="num-r">0</td><td>Crosses water. Connects to a road or a bridge.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Policies</h3>
+  <div class="tw">
+    <table>
+      <caption>Table 7 — Policy effects in the code</caption>
+      <thead><tr><th>Policy</th><th class="num-r">Cost per tick</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr><td>Clean Energy</td><td class="num-r">20</td><td>Factory income × 0.85. Shop income × 1.0. Happiness + 10.</td></tr>
+        <tr><td>Tax Incentives</td><td class="num-r">0</td><td>Factory and shop income × 0.8. Population growth × 1.4. Happiness + 5.</td></tr>
+        <tr><td>Corporate Surcharge</td><td class="num-r">0</td><td>Factory and shop income × 1.3. Population growth × 0.75. Happiness − 10.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>The policy file also contains requirements and an environmental value. The command does not test the requirements. No engine reads the environmental value. Only the income multipliers, the growth multiplier, the cost, and the happiness value affect the game.</p>
+
+  <h3>Rules</h3>
+  <p>The kernel loads one rule at start. The rule fires one time, when the population reaches 100. It adds $5000, sends a news item, and sends a second news item about an unlocked building. The building is not locked in the code, so the second item is only a message.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="utilities">
+  <h2><span class="num">07</span>Utility network</h2>
+
+  <p>Five resources move through the city: power, water, sewage, internet, and transit. The kernel rebuilds the graph on each tick, before the engines run.</p>
+
+  <p>Each built tile becomes a node. Two built tiles get an edge when they touch on one side. A factory is a producer. A house and a shop are consumers. A park is a node with no role. A road is not a node at all, because the graph only includes tiles with a building.</p>
+
+  <figure>
+    <div class="fig-tag">FIGURE 5 — UTILITY GRAPH</div>
+    <svg viewBox="0 0 1000 350" role="img" aria-label="A small tile grid with one factory, two houses, one shop and a park. Cyan edges show adjacency. Text explains the breadth-first solve.">
+      <defs>
+        <marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#38d9ef"></path>
+        </marker>
+      </defs>
+
+      <text class="bs" x="40" y="70">Five by three tiles. Only built tiles join the graph.</text>
+
+      <g>
+        <rect x="40" y="90" width="48" height="48" fill="#0b1424" stroke="#22314a"></rect>
+        <rect x="88" y="90" width="48" height="48" fill="#0b1424" stroke="#22314a"></rect>
+        <rect x="136" y="90" width="48" height="48" fill="#0b1424" stroke="#22314a"></rect>
+        <rect x="184" y="90" width="48" height="48" fill="#0b1424" stroke="#22314a"></rect>
+        <rect x="232" y="90" width="48" height="48" fill="#0b1424" stroke="#22314a"></rect>
+
+        <rect x="40" y="138" width="48" height="48" fill="#0b1424" stroke="#22314a"></rect>
+        <rect x="88" y="138" width="48" height="48" fill="#2a2109" stroke="#7a5b12"></rect>
+        <rect x="136" y="138" width="48" height="48" fill="#2a1017" stroke="#7f2d3d"></rect>
+        <rect x="184" y="138" width="48" height="48" fill="#0d2230" stroke="#1f4b5c"></rect>
+        <rect x="232" y="138" width="48" height="48" fill="#0b1424" stroke="#22314a"></rect>
+
+        <rect x="40" y="186" width="48" height="48" fill="#0b1424" stroke="#22314a"></rect>
+        <rect x="88" y="186" width="48" height="48" fill="#0b1424" stroke="#22314a"></rect>
+        <rect x="136" y="186" width="48" height="48" fill="#2a1017" stroke="#7f2d3d"></rect>
+        <rect x="184" y="186" width="48" height="48" fill="#06251b" stroke="#1f6b4d"></rect>
+        <rect x="232" y="186" width="48" height="48" fill="#0b1424" stroke="#22314a"></rect>
+
+        <text x="112" y="169" text-anchor="middle" fill="#fde68a" font-weight="700">F</text>
+        <text x="160" y="169" text-anchor="middle" fill="#fecdd3" font-weight="700">H</text>
+        <text x="208" y="169" text-anchor="middle" fill="#a5f3fc" font-weight="700">S</text>
+        <text x="160" y="217" text-anchor="middle" fill="#fecdd3" font-weight="700">H</text>
+        <text x="208" y="217" text-anchor="middle" fill="#a7f3d0" font-weight="700">P</text>
+
+        <line x1="136" y1="140" x2="136" y2="184" stroke="#38d9ef" stroke-width="3"></line>
+        <line x1="184" y1="140" x2="184" y2="184" stroke="#38d9ef" stroke-width="3"></line>
+        <line x1="138" y1="186" x2="182" y2="186" stroke="#38d9ef" stroke-width="3"></line>
+        <line x1="184" y1="188" x2="184" y2="232" stroke="#38d9ef" stroke-width="3"></line>
+      </g>
+
+      <text class="lbl" x="40" y="262">F factory · H house · S shop · P park</text>
+      <text class="lbl" x="40" y="282">Cyan edge: the tiles touch on one side.</text>
+
+      <text class="bt" x="330" y="104">The solver</text>
+      <text class="bs" x="330" y="130">1.  Clear the supply flag of each node.</text>
+      <text class="bs" x="330" y="152">2.  Take the capacity of each factory.</text>
+      <text class="bs" x="330" y="174">3.  Run a breadth-first search from the factory.</text>
+      <text class="bs" x="330" y="196">4.  Mark a consumer supplied if capacity remains.</text>
+      <text class="bs" x="330" y="218">5.  Subtract the demand from the remaining capacity.</text>
+
+      <rect x="330" y="244" width="630" height="72" rx="10" fill="#0c1729" stroke="#2b3b57"></rect>
+      <text class="bs" x="348" y="268">A factory supplies 10 power, 5 water, 5 sewage,</text>
+      <text class="bs" x="348" y="288">5 internet, and 5 transit. A house or a shop asks for 1 of each.</text>
+      <text class="bs" x="348" y="308">No factory means no supply.</text>
+    </svg>
+    <figcaption><b>Figure 5 — Utility graph.</b> The graph is separate from the road graph. A road does not carry a utility. Supply moves only between adjacent buildings, so a chain of buildings is necessary.</figcaption>
+  </figure>
+
+  <div class="warn">
+    <b>Caution</b>
+    <p>There is no power plant and no water plant in the building list. A factory is the only producer. A city without a factory has zero utility supply, and every house and shop stays unsupplied.</p>
+  </div>
+
+  <h3>Supply state</h3>
+  <p>The solver writes two flags on each building entity: <code>powerSatisfied</code> and <code>waterSatisfied</code>. No interface panel shows these flags. No economy formula reads them. They are available for a future rule.</p>
+
+  <h3>Bridge rule</h3>
+  <p>A road on a river tile becomes a bridge. A bridge must touch a road or a bridge, or the command fails. The game selects the orientation with the largest number of connecting neighbours. On a tie, the code returns east-west. The river shape comes from a sine formula with a centre at x = 7.</p>
+
+  <div class="note">
+    <b>Note</b>
+    <p>The same river formula appears in three places: <code>src/kernel/Command.ts</code> (two copies) and <code>components/IsoMap/utils.ts</code>. A change to one copy does not change the others.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="ai">
+  <h2><span class="num">08</span>AI advisor</h2>
+
+  <p>The AI advisor gives the player a goal. A goal has a description, a target type, a target value, and a reward. The target type is population, money, or building count.</p>
+
+  <p>The kernel asks for a goal through the <code>AIService</code> interface. The default implementation is <code>GeminiAIService</code>. It sends a POST request to <code>/api/gemini/goal</code>. The server adds the API key, calls the model, and returns JSON that agrees with a fixed schema.</p>
+
+  <p>The repository also has an older service at <code>services/geminiService.ts</code>. No file imports it. It creates a model client in browser code and uses the model <code>gemini-2.5-flash</code>. Do not import it. It would put the key in the client bundle.</p>
+
+  <figure>
+    <div class="fig-tag">FIGURE 6 — GOAL GENERATION AND FALLBACK</div>
+    <svg viewBox="0 0 1000 280" role="img" aria-label="A row of boxes from the kernel to the Gemini API, with a fallback service below and a JSON return path.">
+      <defs>
+        <marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#5b6f8c"></path>
+        </marker>
+        <marker id="a6d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#4a5b74"></path>
+        </marker>
+      </defs>
+
+      <rect class="box" x="20" y="50" width="160" height="58" rx="10"></rect>
+      <text class="bt" x="100" y="74" text-anchor="middle">GameKernel</text>
+      <text class="bs" x="100" y="92" text-anchor="middle">generateNewAIGoal</text>
+
+      <rect class="box" x="210" y="50" width="190" height="58" rx="10"></rect>
+      <text class="bt" x="305" y="74" text-anchor="middle">GeminiAIService</text>
+      <text class="bs" x="305" y="92" text-anchor="middle">fetch with JSON body</text>
+
+      <rect class="box" x="430" y="50" width="200" height="58" rx="10"></rect>
+      <text class="bt" x="530" y="74" text-anchor="middle">POST /api/gemini/goal</text>
+      <text class="bs" x="530" y="92" text-anchor="middle">stats and building counts</text>
+
+      <rect class="box" x="660" y="50" width="150" height="58" rx="10"></rect>
+      <text class="bt" x="735" y="74" text-anchor="middle">Express</text>
+      <text class="bs" x="735" y="92" text-anchor="middle">API key check</text>
+
+      <rect class="box-c" x="840" y="50" width="140" height="58" rx="10"></rect>
+      <text class="bt" x="910" y="74" text-anchor="middle">Gemini API</text>
+      <text class="bs" x="910" y="92" text-anchor="middle">JSON schema</text>
+
+      <path class="ln" d="M180,79 H210" marker-end="url(#a6)"></path>
+      <path class="ln" d="M400,79 H430" marker-end="url(#a6)"></path>
+      <path class="ln" d="M630,79 H660" marker-end="url(#a6)"></path>
+      <path class="ln" d="M810,79 H840" marker-end="url(#a6)"></path>
+
+      <text class="lbl" x="700" y="140">No key: response 503</text>
+
+      <path class="lnd" d="M910,108 V196 H632" marker-end="url(#a6d)"></path>
+      <text class="lbl" x="640" y="188">JSON</text>
+
+      <rect class="box" x="430" y="170" width="200" height="52" rx="10"></rect>
+      <text class="bt" x="530" y="193" text-anchor="middle">AIGoal object</text>
+      <text class="bs" x="530" y="210" text-anchor="middle">description, target, reward</text>
+
+      <path class="lnd" d="M305,108 V196" marker-end="url(#a6d)"></path>
+      <text class="lbl" x="314" y="152">on error</text>
+
+      <rect class="box" x="210" y="170" width="190" height="52" rx="10"></rect>
+      <text class="bt" x="305" y="193" text-anchor="middle">ProceduralAIService</text>
+      <text class="bs" x="305" y="210" text-anchor="middle">five fixed goals</text>
+
+      <path class="lnd" d="M400,196 H430" marker-end="url(#a6d)"></path>
+
+      <text class="lbl" x="20" y="258">The worker calls a relative URL. The server keeps the key. The browser never sees the key.</text>
+    </svg>
+    <figcaption><b>Figure 6 — Goal generation.</b> The model call has a strict JSON schema. If the call fails, throws, or returns no text, the procedural service supplies a goal from a fixed list. The player can always continue.</figcaption>
+  </figure>
+
+  <h3>Endpoints</h3>
+  <div class="tw">
+    <table>
+      <caption>Table 8 — Server API</caption>
+      <thead><tr><th>Endpoint</th><th>Input</th><th>Output</th><th>Error</th></tr></thead>
+      <tbody>
+        <tr><td><code>POST /api/gemini/goal</code></td><td>stats, grid</td><td>Goal JSON: description, targetType, targetValue, buildingType, reward</td><td>503 without a key; 500 on a model error</td></tr>
+        <tr><td><code>POST /api/gemini/news</code></td><td>stats, recentAction</td><td>News JSON: text, type, id</td><td>503 without a key; 500 on a model error</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>The goal request uses temperature 0.7. The news request uses temperature 1.1. Both requests set the response type to JSON and give a schema, so the model returns structured data and not free text.</p>
+
+  <h3>Goal life cycle</h3>
+  <p>The kernel holds at most one goal. The life cycle has four states.</p>
+
+  <figure>
+    <div class="fig-tag">FIGURE 7 — GOAL STATE MACHINE</div>
+    <svg viewBox="0 0 1000 250" role="img" aria-label="Four states: no goal, active, complete, claimed. Arrows show creation, completion, claim, and the request for a new goal.">
+      <defs>
+        <marker id="a7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#5b6f8c"></path>
+        </marker>
+        <marker id="a7d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#4a5b74"></path>
+        </marker>
+      </defs>
+
+      <rect class="box" x="20" y="80" width="160" height="54" rx="27"></rect>
+      <text class="bt" x="100" y="112" text-anchor="middle">No goal</text>
+
+      <rect class="box-a" x="230" y="80" width="160" height="54" rx="27"></rect>
+      <text class="bt" x="310" y="112" text-anchor="middle">Active</text>
+
+      <rect class="box" x="440" y="80" width="160" height="54" rx="27"></rect>
+      <text class="bt" x="520" y="112" text-anchor="middle">Complete</text>
+
+      <rect class="box" x="650" y="80" width="160" height="54" rx="27"></rect>
+      <text class="bt" x="730" y="112" text-anchor="middle">Reward claimed</text>
+
+      <path class="ln" d="M180,107 H230" marker-end="url(#a7)"></path>
+      <text class="lbl" x="205" y="72" text-anchor="middle">create</text>
+
+      <path class="ln" d="M390,107 H440" marker-end="url(#a7)"></path>
+      <text class="lbl" x="415" y="72" text-anchor="middle">target met</text>
+
+      <path class="ln" d="M600,107 H650" marker-end="url(#a7)"></path>
+      <text class="lbl" x="625" y="72" text-anchor="middle">claim</text>
+
+      <path class="lnd" d="M730,134 V190 H310 V134" marker-end="url(#a7d)"></path>
+      <text class="lbl" x="430" y="206" text-anchor="middle">generate a new goal</text>
+
+      <text class="lbl" x="20" y="232">Freeplay mode never creates a goal. The state stays at No goal.</text>
+    </svg>
+    <figcaption><b>Figure 7 — Goal life cycle.</b> A goal becomes complete in step 7 of the tick. It does not pay the reward by itself. The player must press “Collect Reward”. The kernel then pays, clears the goal, and asks for a new goal.</figcaption>
+  </figure>
+
+  <p>The claim operation calls <code>resources.adjust('money', reward)</code>. It then sets the goal to null and emits <code>goal_completed</code>. A new request starts immediately. The interface shows a spinner until the new goal arrives.</p>
+
+  <div class="ok">
+    <b>Fallback</b>
+    <p>The procedural service has five goals and eight news lines. It also adds a line about the player's most recent action. The fallback makes the game playable without a key, a network, or a model.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="interface">
+  <h2><span class="num">09</span>Interface and visuals</h2>
+
+  <p>The interface is an overlay on a full-screen WebGL canvas. The overlay has four regions. The player can open a settings deck and a handbook modal from the overlay.</p>
+
+  <figure>
+    <div class="fig-tag">FIGURE 8 — SCREEN REGIONS</div>
+    <svg viewBox="0 0 1000 400" role="img" aria-label="Wireframe of the game screen: stats at the top left, deck and adviser at the right, canvas in the middle, toolbar and news at the bottom.">
+      <rect x="30" y="30" width="940" height="340" rx="16" fill="#0a1322" stroke="#2b3b57" stroke-width="1.6"></rect>
+
+      <rect class="box" x="50" y="50" width="360" height="64" rx="10"></rect>
+      <text class="bt" x="68" y="76">StatsPanel</text>
+      <text class="bs" x="68" y="96">money · population · day · approval · traffic · undo</text>
+
+      <rect class="box" x="700" y="50" width="250" height="64" rx="10"></rect>
+      <text class="bt" x="718" y="76">Operational Deck</text>
+      <text class="bs" x="718" y="96">visual, simulation, policy, diagnostics</text>
+
+      <rect class="box" x="700" y="128" width="250" height="86" rx="10"></rect>
+      <text class="bt" x="718" y="154">ScenarioAdviser</text>
+      <text class="bs" x="718" y="174">AI goal and progress</text>
+      <text class="bs" x="718" y="192">reward button</text>
+
+      <rect class="box-c" x="50" y="130" width="620" height="148" rx="10"></rect>
+      <text class="bt" x="68" y="158">IsoMap</text>
+      <text class="bs" x="68" y="178">WebGL canvas · 15 × 15 tiles · orthographic camera</text>
+      <text class="bs" x="68" y="196">weather, seasons, overlays, photo filter</text>
+      <text class="bs" x="68" y="214">citizens, vehicles, smoke, fire, light poles</text>
+
+      <rect class="box" x="50" y="290" width="400" height="60" rx="10"></rect>
+      <text class="bt" x="68" y="314">ToolBar</text>
+      <text class="bs" x="68" y="334">bulldoze · road · house · shop · factory · park</text>
+
+      <rect class="box" x="480" y="290" width="470" height="60" rx="10"></rect>
+      <text class="bt" x="498" y="314">NewsTicker</text>
+      <text class="bs" x="498" y="334">last 13 news items · colours by type</text>
+
+      <text class="lbl" x="30" y="392">The overlay ignores pointer events, except on its panels. A click on a tile reaches the canvas.</text>
+    </svg>
+    <figcaption><b>Figure 8 — Screen regions.</b> The start screen covers the canvas before the game starts. After the start, the overlay receives the state from the store through props.</figcaption>
+  </figure>
+
+  <h3>Visual controls</h3>
+  <p>The deck changes the look of the city. It sets the time of day, the weather, the season, the overlay, the photo filter, the camera style, and the audio volume. It also triggers a fire disaster and sets sandbox values for the statistics.</p>
+
+  <p>These controls are presentation only. They change colours, particles, light, and sound. They do not change a simulation value.</p>
+
+  <div class="tw">
+    <table>
+      <caption>Table 9 — Weather presets</caption>
+      <thead><tr><th>Type</th><th>Particles</th><th class="num-r">Move factor</th><th class="num-r">Demand factor</th></tr></thead>
+      <tbody>
+        <tr><td>Clear</td><td class="num-r">0</td><td class="num-r">1.0</td><td class="num-r">1.0</td></tr>
+        <tr><td>Overcast</td><td class="num-r">0</td><td class="num-r">0.9</td><td class="num-r">1.1</td></tr>
+        <tr><td>Rain</td><td class="num-r">120</td><td class="num-r">0.7</td><td class="num-r">1.25</td></tr>
+        <tr><td>Thunderstorm</td><td class="num-r">250</td><td class="num-r">0.5</td><td class="num-r">1.5</td></tr>
+        <tr><td>Snow</td><td class="num-r">80</td><td class="num-r">0.6</td><td class="num-r">1.6</td></tr>
+        <tr><td>Fog</td><td class="num-r">0</td><td class="num-r">0.5</td><td class="num-r">1.2</td></tr>
+        <tr><td>Heatwave</td><td class="num-r">0</td><td class="num-r">0.85</td><td class="num-r">1.8</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>The two factor columns are data only. No engine reads them. The same is true for the tourism and utility multipliers in the season table.</p>
+
+  <h3>Sound</h3>
+  <p><code>AdaptiveSoundscapeEngine</code> makes sound with the Web Audio API. It does not load an audio file. It mixes a low hum, a noise band for weather, and a siren for a disaster. A browser blocks audio until the user clicks. The application waits for the first click or touch.</p>
+
+  <h3>Rendering</h3>
+  <p><code>IsoMap</code> is a React Three Fiber scene. It uses an orthographic camera and map controls. The tile height comes from a sine function, and a river carves a lower channel. Buildings are procedural meshes. Cars, citizens, smoke, and weather are small systems with their own update loop.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="build">
+  <h2><span class="num">10</span>Build and run</h2>
+
+  <h3>Prerequisites</h3>
+  <ul>
+    <li>Node.js 20 or later.</li>
+    <li>npm 10 or later.</li>
+    <li>A Gemini API key for the AI advisor. The game works without a key, but it uses the fixed goals.</li>
+  </ul>
+
+  <h3>Start the development server</h3>
+  <ol>
+    <li>Open a terminal in the repository root.</li>
+    <li>Run <code>npm ci</code> to install the exact versions from the lock file.</li>
+    <li>Export the key: <code>export GEMINI_API_KEY=your_key</code>.</li>
+    <li>Run <code>npm run dev</code>.</li>
+    <li>Open <code>http://localhost:3000</code> in a browser.</li>
+  </ol>
+
+  <div class="warn">
+    <b>Caution — API key</b>
+    <p>The README tells you to put the key in <code>.env.local</code>. The server reads <code>process.env.GEMINI_API_KEY</code> only. The dev script runs <code>tsx server.ts</code> without an env-file option. Export the variable in the shell to be sure. Do not commit the key.</p>
+  </div>
+
+  <h3>Commands</h3>
+  <div class="tw">
+    <table>
+      <caption>Table 10 — npm scripts</caption>
+      <thead><tr><th>Command</th><th>Action</th><th>Output</th></tr></thead>
+      <tbody>
+        <tr><td><code>npm run dev</code></td><td>Runs <code>tsx server.ts</code>. The server starts Vite in middleware mode.</td><td>Live server on port 3000</td></tr>
+        <tr><td><code>npm run build</code></td><td>Runs <code>vite build</code>, then bundles the server with esbuild.</td><td><code>dist/</code> and <code>dist/server.cjs</code></td></tr>
+        <tr><td><code>npm start</code></td><td>Runs <code>node dist/server.cjs</code>.</td><td>Server on port 3000</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>The server reads <code>NODE_ENV</code>. When the value is not <code>production</code>, the server starts Vite and serves the source files. For a production start, set the value first:</p>
+
+  <pre>npm run build
+NODE_ENV=production npm start</pre>
+
+  <p>There is no test script, no lint script, and no CI workflow in the current tree. A build problem appears first on a developer machine.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="map">
+  <h2><span class="num">11</span>Repository map</h2>
+
+  <div class="tw">
+    <table>
+      <caption>Table 11 — Directories and important files</caption>
+      <thead><tr><th>Path</th><th>Contents</th></tr></thead>
+      <tbody>
+        <tr><td><code>index.html</code>, <code>index.tsx</code>, <code>App.tsx</code></td><td>Page shell, React root, top-level state wiring, sound engine start</td></tr>
+        <tr><td><code>types.ts</code>, <code>constants.tsx</code></td><td>Shared types, grid size, building table for the interface</td></tr>
+        <tr><td><code>components/StartScreen/</code></td><td>Mode selection, cash preview, mayor and map options, climate presets, handbook modal</td></tr>
+        <tr><td><code>components/IsoMap/</code></td><td>3D scene, procedural buildings, cars, citizens, weather, lights, bridge geometry</td></tr>
+        <tr><td><code>components/UIOverlay/</code></td><td>Stats, toolbar, news ticker, AI adviser, visual control deck</td></tr>
+        <tr><td><code>src/hooks/</code>, <code>src/store/</code></td><td>Worker bridge, player actions, zustand store with two sync methods</td></tr>
+        <tr><td><code>src/workers/</code></td><td>Worker entry point, message switch, worker manager, main-thread fallback</td></tr>
+        <tr><td><code>src/kernel/</code></td><td>Kernel facade, event bus, commands, snapshots, DI container</td></tr>
+        <tr><td><code>src/kernel/core/</code></td><td>Nineteen services: time, random, rules, routing, space, telemetry, save, replay, assets</td></tr>
+        <tr><td><code>src/simulation/</code></td><td>Economy, population, traffic, events, utility network</td></tr>
+        <tr><td><code>src/ecs/</code></td><td>Entity manager and seven component types</td></tr>
+        <tr><td><code>src/ai/</code></td><td>Service interface, Gemini client, procedural fallback</td></tr>
+        <tr><td><code>services/geminiService.ts</code></td><td>An older browser-side AI service. No file imports it.</td></tr>
+        <tr><td><code>src/config/</code></td><td>Building and policy JSON files</td></tr>
+        <tr><td><code>server.ts</code></td><td>Express app, two AI routes, Vite middleware, static file mode</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>The largest files are <code>components/IsoMap/IsoMap.tsx</code> (1,197 lines), <code>components/UIOverlay/VisualControlDeck.tsx</code> (552 lines), <code>src/kernel/GameKernel.ts</code> (539 lines), and <code>src/kernel/visual/VisualEngineState.ts</code> (400 lines).</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="limits">
+  <h2><span class="num">12</span>Limits and gaps</h2>
+
+  <p>This section records the differences between the intent of the code and the behaviour of the code. Each item names the file that causes the item.</p>
+
+  <div class="tw">
+    <table>
+      <caption>Table 12 — Findings</caption>
+      <thead><tr><th>Area</th><th>Finding</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="tag hi">High</span></td>
+          <td>Determinism is not complete. The engines use <code>Math.random()</code> in 43 places. The seeded service is created with seed 1337 but no engine uses it.</td>
+          <td>The replay framework cannot reproduce a run. Two runs with the same commands differ.</td>
+        </tr>
+        <tr>
+          <td><span class="tag hi">High</span></td>
+          <td>The event system is off. <code>simulation_disasters</code> is false, and no code calls <code>setFlag</code>.</td>
+          <td>The event engine, its five news items, and the disaster counter never run.</td>
+        </tr>
+        <tr>
+          <td><span class="tag mid">Medium</span></td>
+          <td>A second AI service exists at <code>services/geminiService.ts</code>. It creates a model client in browser code and uses model <code>gemini-2.5-flash</code>. No file imports it.</td>
+          <td>Dead code. An import of this file would put the API key in the client bundle and add a second model name.</td>
+        </tr>
+        <tr>
+          <td><span class="tag mid">Medium</span></td>
+          <td>Two building tables exist: <code>constants.tsx</code> and <code>src/config/buildings.json</code>. The JSON file has utility and job fields. The TypeScript table does not.</td>
+          <td>A cost or name change can go into one table only. The engine and the toolbar then disagree.</td>
+        </tr>
+        <tr>
+          <td><span class="tag mid">Medium</span></td>
+          <td>Income is applied on each tick, but the labels say “per day”. One day is five ticks.</td>
+          <td>The economy is five times faster than the labels suggest.</td>
+        </tr>
+        <tr>
+          <td><span class="tag mid">Medium</span></td>
+          <td>No save and load path exists. The worker handles <code>SET_SNAPSHOT</code>, but no caller sends the message. There is no save button.</td>
+          <td>The save migration framework and the replay framework are unused. A page reload loses the city.</td>
+        </tr>
+        <tr>
+          <td><span class="tag mid">Medium</span></td>
+          <td>The worker fallback covers construction only. <code>try/catch</code> around <code>new Worker</code> cannot catch an error inside the worker.</td>
+          <td>A worker error leaves the interface without snapshots and without a message.</td>
+        </tr>
+        <tr>
+          <td><span class="tag mid">Medium</span></td>
+          <td>The utility model has no power plant. A factory is the only producer, and roads do not conduct.</td>
+          <td>Houses and shops are unsupplied in a city without industry.</td>
+        </tr>
+        <tr>
+          <td><span class="tag low">Low</span></td>
+          <td><code>syncWithDelta</code> is defined but never called. Every tick sends a full 225-tile snapshot.</td>
+          <td>A larger grid would need the delta path or a smaller message.</td>
+        </tr>
+        <tr>
+          <td><span class="tag low">Low</span></td>
+          <td>The river formula appears in three places.</td>
+          <td>The visual river and the build rule can disagree after a change.</td>
+        </tr>
+        <tr>
+          <td><span class="tag low">Low</span></td>
+          <td>The bridge tie-break always returns east-west.</td>
+          <td>A north-south bridge on a symmetric tile can get the wrong deck direction.</td>
+        </tr>
+        <tr>
+          <td><span class="tag low">Low</span></td>
+          <td>Policy requirements are data only. The toggle command does not test them.</td>
+          <td>A player can enable a policy before the stated minimum.</td>
+        </tr>
+        <tr>
+          <td><span class="tag low">Low</span></td>
+          <td><code>index.html</code> maps React and three to a CDN through an import map. Vite also bundles these packages.</td>
+          <td>Two copies of React can load. The page also needs network access for Tailwind and the CDN.</td>
+        </tr>
+        <tr>
+          <td><span class="tag low">Low</span></td>
+          <td>No tests, no lint rules, and no <code>strict</code> mode in <code>tsconfig.json</code>.</td>
+          <td>A type error can stay in the code until a build fails at run time.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <b>Strength</b>
+    <p>The project has a clear separation between the domain and the interface. The command pattern and the snapshot message give a stable boundary. The kernel has small services with one job each. It is easy to test a service alone, and easy to add a new engine to the scheduler.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="ste">
+  <h2><span class="num">13</span>STE writing rules</h2>
+
+  <p>This document follows the writing rules of ASD-STE100 Issue 9. The standard has two parts: a dictionary of approved words, and a set of writing rules. This document applies the writing rules. It uses the terms of the repository as technical nouns.</p>
+
+  <div class="tw">
+    <table>
+      <caption>Table 13 — Rules applied in this document</caption>
+      <thead><tr><th>Rule</th><th>Requirement</th><th>Use in this document</th></tr></thead>
+      <tbody>
+        <tr><td>3.2</td><td>Use the simple present, simple past, and simple future only.</td><td>“The kernel owns the grid.” “The engine adds the income.”</td></tr>
+        <tr><td>3.5</td><td>Use the “-ing” form only in a technical noun.</td><td>“building”, “rendering”, “pathfinding”. Not “is running”.</td></tr>
+        <tr><td>3.6</td><td>Use the active voice.</td><td>“The manager keeps an undo stack.” Not “the stack is kept”.</td></tr>
+        <tr><td>3.7</td><td>Use a verb for an action. Do not use a noun for the action.</td><td>“The player selects a tool.” Not “tool selection occurs”.</td></tr>
+        <tr><td>4.1</td><td>Use short sentences: 25 words maximum in descriptive text, 20 in procedures.</td><td>The longest descriptive sentence has 23 words. The longest list item has 12 words.</td></tr>
+        <tr><td>4.2</td><td>Do not omit words. Do not use contractions.</td><td>“do not”, “it is”, “does not”. No apostrophe forms.</td></tr>
+        <tr><td>4.3</td><td>Use a vertical list for complex text.</td><td>Prerequisites, start steps, and the tick steps.</td></tr>
+        <tr><td>4.5</td><td>Use an article before a noun.</td><td>“the worker”, “a snapshot”, “the grid”.</td></tr>
+        <tr><td>5.3</td><td>Write an instruction in the imperative.</td><td>“Open a terminal.” “Run npm run dev.”</td></tr>
+        <tr><td>2.1</td><td>Use a maximum of three words in a noun cluster.</td><td>“utility graph”, “worker message”, “save migration framework”.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Word choices</h3>
+  <p>The standard uses a controlled vocabulary of about 900 words. This table gives the common replacements in this document.</p>
+
+  <div class="tw">
+    <table>
+      <caption>Table 14 — Approved word choices</caption>
+      <thead><tr><th>Not approved</th><th>Approved in this document</th></tr></thead>
+      <tbody>
+        <tr><td>utilise, leverage</td><td>use</td></tr>
+        <tr><td>commence, initiate</td><td>start</td></tr>
+        <tr><td>terminate</td><td>stop</td></tr>
+        <tr><td>prior to</td><td>before</td></tr>
+        <tr><td>in order to</td><td>to</td></tr>
+        <tr><td>ensure</td><td>make sure</td></tr>
+        <tr><td>facilitate</td><td>help</td></tr>
+        <tr><td>approximately</td><td>about</td></tr>
+        <tr><td>e.g.</td><td>for example</td></tr>
+        <tr><td>etc.</td><td>a complete list, or “and other items”</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <b>Limit of this check</b>
+    <p>A full STE check needs the STE dictionary and a term checker. This document applies the writing rules and a sentence-length check. It does not claim a full dictionary review. A technical noun such as <code>GameKernel</code> or <code>snapshot</code> can stay, because the standard permits technical nouns for the subject field.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="glossary">
+  <h2><span class="num">14</span>Glossary</h2>
+
+  <div class="tw">
+    <table>
+      <caption>Table 15 — Terms used in this document</caption>
+      <thead><tr><th>Term</th><th>Meaning in this repository</th></tr></thead>
+      <tbody>
+        <tr><td>kernel</td><td>The <code>GameKernel</code> object. It holds the authority for the game state.</td></tr>
+        <tr><td>facade</td><td>One object that gives a simple interface to many subsystems.</td></tr>
+        <tr><td>tick</td><td>One step of the simulation. The default interval is 2000 ms.</td></tr>
+        <tr><td>tile</td><td>One cell of the 15 by 15 grid.</td></tr>
+        <tr><td>grid</td><td>The two-dimensional array of tiles.</td></tr>
+        <tr><td>command</td><td>An object that changes the state and can undo the change.</td></tr>
+        <tr><td>snapshot</td><td>A full copy of the state for the interface.</td></tr>
+        <tr><td>read model</td><td>The copy of the state in <code>WorldStateRegistry</code>. The interface reads this copy.</td></tr>
+        <tr><td>engine</td><td>A simulation system with an update method. The scheduler runs the engines.</td></tr>
+        <tr><td>service</td><td>A small class with one job. The kernel owns each service.</td></tr>
+        <tr><td>worker</td><td>A browser Web Worker. It runs the simulation away from the interface thread.</td></tr>
+        <tr><td>store</td><td>The zustand object on the main thread. It holds the client copy of the state.</td></tr>
+        <tr><td>ECS</td><td>Entity-component-system. An entity is an id. A component is a data record.</td></tr>
+        <tr><td>producer</td><td>A node that gives utility capacity. Only a factory is a producer.</td></tr>
+        <tr><td>consumer</td><td>A node that asks for a utility. A house and a shop are consumers.</td></tr>
+        <tr><td>BFS</td><td>Breadth-first search. The utility solver uses BFS from each producer.</td></tr>
+        <tr><td>A*</td><td>A route search with a cost and a distance estimate. <code>PathfindingService</code> uses A*.</td></tr>
+        <tr><td>feature flag</td><td>A named boolean that turns a system on or off.</td></tr>
+        <tr><td>seed</td><td>A number that starts a random sequence.</td></tr>
+        <tr><td>telemetry</td><td>Timing and memory data that the kernel records for diagnosis.</td></tr>
+        <tr><td>headless</td><td>A run without a screen. <code>HeadlessSimulationEngine</code> runs many ticks at once.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Method</h3>
+  <p>I read all 68 TypeScript and TSX files in the repository, a total of 9,325 lines. I read the two JSON data files and the build files. I did not execute the application. I did not open it in a browser. The statements about behaviour come from the source.</p>
+
+  <p>The document has eight diagrams as inline SVG. The file has no external dependency, so it opens without a network. It prints on A4 paper without a change to the layout.</p>
+</section>
+
+<footer>
+  <p>SkyMetropolis repository guide · revision <code>cf8c917</code> · 18 November 2026.<br>
+  Written to the writing rules of ASD-STE100 Simplified Technical English, Issue 9. Diagrams are inline SVG. The document is self-contained.</p>
+</footer>
+
+</main>
+</div>
+</body>
+</html>
